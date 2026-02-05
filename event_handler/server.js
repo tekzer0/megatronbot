@@ -19,13 +19,10 @@ const app = express();
 app.use(helmet());
 app.use(express.json());
 
-const { API_KEY, TELEGRAM_WEBHOOK_SECRET, TELEGRAM_BOT_TOKEN, GH_WEBHOOK_TOKEN, GH_OWNER, GH_REPO } = process.env;
+const { API_KEY, TELEGRAM_WEBHOOK_SECRET, TELEGRAM_BOT_TOKEN, GH_WEBHOOK_TOKEN, GH_OWNER, GH_REPO, TELEGRAM_CHAT_ID, TELEGRAM_VERIFICATION } = process.env;
 
 // Bot token from env, can be overridden by /telegram/register
 let telegramBotToken = TELEGRAM_BOT_TOKEN || null;
-
-// Track last active chat for job notifications
-let lastChatId = null;
 
 // Routes that have their own authentication
 const PUBLIC_ROUTES = ['/telegram/webhook', '/github/webhook'];
@@ -39,6 +36,11 @@ app.use((req, res, next) => {
     return res.status(401).json({ error: 'Unauthorized' });
   }
   next();
+});
+
+// GET /ping - health check endpoint
+app.get('/ping', (req, res) => {
+  res.json({ message: 'Pong!' });
 });
 
 // GET /jobs/status - get running job status
@@ -98,13 +100,30 @@ app.post('/telegram/webhook', async (req, res) => {
 
   if (message && message.chat && telegramBotToken) {
     const chatId = String(message.chat.id);
-    lastChatId = chatId;
 
     let messageText = null;
 
     if (message.text) {
       messageText = message.text;
-    } else if (message.voice) {
+    }
+
+    // Check for verification code - this works even before TELEGRAM_CHAT_ID is set
+    if (TELEGRAM_VERIFICATION && messageText === TELEGRAM_VERIFICATION) {
+      await sendMessage(telegramBotToken, chatId, `Your chat ID:\n<code>${chatId}</code>`);
+      return res.status(200).json({ ok: true });
+    }
+
+    // Security: if no TELEGRAM_CHAT_ID configured, ignore all messages (except verification above)
+    if (!TELEGRAM_CHAT_ID) {
+      return res.status(200).json({ ok: true });
+    }
+
+    // Security: only accept messages from configured chat
+    if (chatId !== TELEGRAM_CHAT_ID) {
+      return res.status(200).json({ ok: true });
+    }
+
+    if (message.voice) {
       // Handle voice messages
       if (!isWhisperEnabled()) {
         await sendMessage(telegramBotToken, chatId, 'Voice messages are not supported. Please set OPENAI_API_KEY to enable transcription.');
@@ -114,7 +133,6 @@ app.post('/telegram/webhook', async (req, res) => {
       try {
         const { buffer, filename } = await downloadFile(telegramBotToken, message.voice.file_id);
         messageText = await transcribeAudio(buffer, filename);
-        console.log('[TELEGRAM] Transcribed voice:', messageText.slice(0, 100));
       } catch (err) {
         console.error('Failed to transcribe voice:', err);
         await sendMessage(telegramBotToken, chatId, 'Sorry, I could not transcribe your voice message.');
@@ -135,7 +153,6 @@ app.post('/telegram/webhook', async (req, res) => {
         updateHistory(chatId, newHistory);
 
         // Send response (auto-splits if needed)
-        console.log('[TELEGRAM] Sending:', response.slice(0, 200));
         await sendMessage(telegramBotToken, chatId, response);
       } catch (err) {
         console.error('Failed to process message with Claude:', err);
@@ -334,7 +351,7 @@ app.post('/github/webhook', async (req, res) => {
   }
 
   // Skip if no chat ID to notify
-  if (!lastChatId || !telegramBotToken) {
+  if (!TELEGRAM_CHAT_ID || !telegramBotToken) {
     console.log(`Job ${jobId} completed but no chat ID to notify`);
     return res.status(200).json({ ok: true, skipped: true, reason: 'no chat to notify' });
   }
@@ -361,8 +378,8 @@ app.post('/github/webhook', async (req, res) => {
       prUrl: pr.html_url,
     });
 
-    await sendMessage(telegramBotToken, lastChatId, message);
-    console.log(`Notified chat ${lastChatId} about job ${jobId.slice(0, 8)}`);
+    await sendMessage(telegramBotToken, TELEGRAM_CHAT_ID, message);
+    console.log(`Notified chat ${TELEGRAM_CHAT_ID} about job ${jobId.slice(0, 8)}`);
 
     res.status(200).json({ ok: true, notified: true });
   } catch (err) {

@@ -1,4 +1,4 @@
-import { writeFileSync } from 'fs';
+import { writeFileSync, readFileSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -77,9 +77,12 @@ export function writeEnvFile(config) {
     githubOwner,
     githubRepo,
     telegramBotToken,
+    telegramWebhookSecret,
     ghWebhookToken,
     anthropicApiKey,
     openaiApiKey,
+    telegramChatId,
+    telegramVerification,
   } = config;
 
   const envContent = `# Event Handler Configuration
@@ -98,6 +101,15 @@ GH_REPO=${githubRepo}
 # Telegram bot token from @BotFather
 TELEGRAM_BOT_TOKEN=${telegramBotToken || ''}
 
+# Telegram webhook secret (validates requests are from Telegram)
+TELEGRAM_WEBHOOK_SECRET=${telegramWebhookSecret || ''}
+
+# Telegram chat ID (restricts bot to this chat only)
+TELEGRAM_CHAT_ID=${telegramChatId || ''}
+
+# Telegram verification code (used during setup, can be removed after)
+TELEGRAM_VERIFICATION=${telegramVerification || ''}
+
 # Token for GitHub Actions webhook auth (must match GH_WEBHOOK_TOKEN secret)
 GH_WEBHOOK_TOKEN=${ghWebhookToken}
 
@@ -110,5 +122,27 @@ OPENAI_API_KEY=${openaiApiKey || ''}
 
   const envPath = join(ROOT_DIR, 'event_handler', '.env');
   writeFileSync(envPath, envContent);
+  return envPath;
+}
+
+/**
+ * Update a single variable in an existing .env file
+ */
+export function updateEnvVariable(key, value) {
+  const envPath = join(ROOT_DIR, 'event_handler', '.env');
+  if (!existsSync(envPath)) {
+    throw new Error('.env file not found. Run npm run setup first.');
+  }
+
+  let content = readFileSync(envPath, 'utf-8');
+  const regex = new RegExp(`^${key}=.*$`, 'm');
+
+  if (regex.test(content)) {
+    content = content.replace(regex, `${key}=${value}`);
+  } else {
+    content = content.trimEnd() + `\n${key}=${value}\n`;
+  }
+
+  writeFileSync(envPath, content);
   return envPath;
 }

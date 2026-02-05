@@ -1,3 +1,12 @@
+import { randomBytes } from 'crypto';
+
+/**
+ * Generate a verification code for Telegram chat ID capture
+ */
+export function generateVerificationCode() {
+  return 'verify-' + randomBytes(4).toString('hex');
+}
+
 /**
  * Register a Telegram webhook
  */

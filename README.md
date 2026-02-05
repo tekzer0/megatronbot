@@ -23,11 +23,17 @@ Simple subprocess filtering. No containers-in-containers, no VM sandboxing, no c
 
 ### Prerequisites
 
-- **Node.js 18+** - [nodejs.org](https://nodejs.org)
-- **GitHub CLI** - `brew install gh` or [cli.github.com](https://cli.github.com)
-- **ngrok** - `brew install ngrok/ngrok/ngrok` or [ngrok.com](https://ngrok.com)
+| Requirement | Install |
+|-------------|---------|
+| **Node.js 18+** | [nodejs.org](https://nodejs.org) |
+| **npm** or **pnpm** | Included with Node.js / [pnpm.io](https://pnpm.io) |
+| **Git** | [git-scm.com](https://git-scm.com) |
+| **GitHub CLI** | `brew install gh` or [cli.github.com](https://cli.github.com) |
+| **ngrok** | `brew install ngrok/ngrok/ngrok` or [ngrok.com](https://ngrok.com/download) |
 
-### Setup
+### Local Development Setup
+
+> **Note:** These instructions are for local testing of the event handler. Production deployment instructions coming soon.
 
 ```bash
 git clone https://github.com/YOUR_USERNAME/thepopebot.git
@@ -37,7 +43,7 @@ npm run setup
 
 The wizard handles everything:
 1. Checks prerequisites
-2. Creates a GitHub Personal Access Token
+2. Creates a GitHub Personal Access Token (fine-grained)
 3. Collects API keys (Anthropic required, OpenAI optional for voice)
 4. Generates `event_handler/.env` for local development
 5. Sets all GitHub repository secrets
@@ -46,6 +52,16 @@ The wizard handles everything:
 8. Registers webhooks automatically
 
 After setup, message your Telegram bot to create jobs!
+
+#### ngrok URL Changes
+
+ngrok assigns a new URL each time you restart it (unless you have a paid plan with a static domain). When your ngrok URL changes, run:
+
+```bash
+npm run setup-telegram
+```
+
+This will verify your server is running, update the GitHub webhook URL, re-register the Telegram webhook, and optionally capture your chat ID for security.
 
 ---
 
@@ -105,6 +121,8 @@ Message your bot directly to chat or create jobs. The bot uses Claude to underst
 - **Chat** - Have a conversation, ask questions, get information
 - **Create jobs** - Say "create a job to..." and the bot will spawn an autonomous agent
 
+**Security:** During setup, you'll verify your chat ID. Once configured, the bot only responds to messages from your authorized chat and ignores everyone else.
+
 #### Voice Messages
 
 Send voice notes to your bot and they'll be transcribed using OpenAI Whisper.
@@ -158,6 +176,7 @@ All environment variables for the Event Handler (set in `event_handler/.env`):
 | `GH_REPO` | GitHub repository name | Yes |
 | `PORT` | Server port (default: 3000) | No |
 | `TELEGRAM_BOT_TOKEN` | Telegram bot token from BotFather | For Telegram |
+| `TELEGRAM_CHAT_ID` | Restricts bot to this chat only | For security |
 | `TELEGRAM_WEBHOOK_SECRET` | Secret for webhook validation | No |
 | `GH_WEBHOOK_TOKEN` | Token for GitHub Actions webhook auth | For notifications |
 | `ANTHROPIC_API_KEY` | Claude API key for chat functionality | For chat |
@@ -238,6 +257,7 @@ Edit `workspace/job.md` with:
 
 | Endpoint | Method | Purpose |
 |----------|--------|---------|
+| `/ping` | GET | Health check (requires API_KEY header, returns `{"message": "Pong!"}`) |
 | `/webhook` | POST | Generic webhook for job creation (requires API_KEY header) |
 | `/telegram/webhook` | POST | Telegram bot webhook for conversational interface |
 | `/telegram/register` | POST | Register Telegram webhook URL |

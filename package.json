@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "setup": "cd setup && npm install && node setup.mjs",
-    "set-up-telegram": "cd setup && npm install && node set-up-telegram.mjs",
+    "setup-telegram": "cd setup && npm install && node setup-telegram.mjs",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

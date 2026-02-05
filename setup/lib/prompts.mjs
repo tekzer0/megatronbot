@@ -124,7 +124,7 @@ export async function promptForTelegramToken() {
       type: 'confirm',
       name: 'addTelegram',
       message: 'Set up Telegram bot?',
-      default: false,
+      default: true,
     },
   ]);
 
@@ -146,6 +146,14 @@ export async function promptForTelegramToken() {
     },
   ]);
   return token;
+}
+
+/**
+ * Generate a Telegram webhook secret
+ */
+export async function generateTelegramWebhookSecret() {
+  const { randomBytes } = await import('crypto');
+  return randomBytes(32).toString('hex');
 }
 
 /**

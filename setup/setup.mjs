@@ -15,6 +15,7 @@ import {
   promptForOpenAIKey,
   promptForGroqKey,
   promptForTelegramToken,
+  generateTelegramWebhookSecret,
   confirm,
   maskSecret,
 } from './lib/prompts.mjs';
@@ -29,8 +30,10 @@ import {
   validateAnthropicKey,
   writeEnvFile,
   encodeAuthJsonBase64,
+  updateEnvVariable,
 } from './lib/auth.mjs';
-import { setTelegramWebhook, validateBotToken } from './lib/telegram.mjs';
+import { setTelegramWebhook, validateBotToken, generateVerificationCode } from './lib/telegram.mjs';
+import { runVerificationFlow, verifyRestart } from './lib/telegram-verify.mjs';
 
 const logo = `
  _____ _          ____                  ____        _
@@ -78,6 +81,7 @@ async function main() {
   let openaiKey = null;
   let groqKey = null;
   let telegramToken = null;
+  let telegramWebhookSecret = null;
   let webhookToken = null;
   let owner = null;
   let repo = null;
@@ -318,6 +322,7 @@ async function main() {
       telegramToken = null;
     } else {
       validateSpinner.succeed(`Bot: @${validation.botInfo.username}`);
+      telegramWebhookSecret = await generateTelegramWebhookSecret();
     }
   } else {
     printInfo('Skipped Telegram setup');
@@ -327,15 +332,19 @@ async function main() {
   // Write .env file for event_handler
   // ─────────────────────────────────────────────────────────────────────────────
   const apiKey = generateWebhookToken().slice(0, 32); // Random API key for webhook endpoint
+  const telegramVerification = telegramToken ? generateVerificationCode() : null;
   const envPath = writeEnvFile({
     apiKey,
     githubToken: pat,
     githubOwner: owner,
     githubRepo: repo,
     telegramBotToken: telegramToken,
+    telegramWebhookSecret,
     ghWebhookToken: webhookToken,
     anthropicApiKey: anthropicKey,
     openaiApiKey: openaiKey,
+    telegramChatId: null,
+    telegramVerification,
   });
   printSuccess(`Created ${envPath}`);
 
@@ -351,7 +360,9 @@ async function main() {
   console.log(chalk.bold('  Terminal 2:'));
   console.log(chalk.cyan('     ngrok http 3000\n'));
 
-  console.log(chalk.dim('  ngrok will show a "Forwarding" URL like: https://abc123.ngrok.io'));
+  console.log(chalk.dim('  ngrok will show a "Forwarding" URL like: https://abc123.ngrok.io\n'));
+  console.log(chalk.yellow('  Note: ') + chalk.dim('ngrok URLs change each time you restart it (unless you have a paid plan).'));
+  console.log(chalk.dim('  When your URL changes, run: ') + chalk.cyan('npm run setup-telegram') + chalk.dim(' to reconfigure.\n'));
 
   let ngrokUrl = null;
   while (!ngrokUrl) {
@@ -368,7 +379,53 @@ async function main() {
         },
       },
     ]);
-    ngrokUrl = url.replace(/\/$/, ''); // Remove trailing slash
+    const testUrl = url.replace(/\/$/, '');
+
+    // Verify the server is reachable through ngrok
+    const healthSpinner = ora('Verifying server is reachable...').start();
+    try {
+      const response = await fetch(`${testUrl}/ping`, {
+        method: 'GET',
+        headers: { 'x-api-key': apiKey },
+        signal: AbortSignal.timeout(10000)
+      });
+      if (response.ok) {
+        const data = await response.json();
+        if (data.message === 'Pong!') {
+          healthSpinner.succeed('Server is reachable and authenticated');
+          ngrokUrl = testUrl;
+        } else {
+          healthSpinner.fail('Unexpected response from server');
+          const retry = await confirm('Try again?');
+          if (!retry) {
+            ngrokUrl = testUrl;
+          }
+        }
+      } else if (response.status === 401) {
+        healthSpinner.fail('Server responded but API key mismatch');
+        printWarning('Restart the event handler to load the new .env file');
+        const retry = await confirm('Try again after restarting?');
+        if (!retry) {
+          ngrokUrl = testUrl;
+        }
+      } else {
+        healthSpinner.fail(`Server returned status ${response.status}`);
+        printWarning('Make sure the event handler server is running (cd event_handler && npm start)');
+        const retry = await confirm('Try again?');
+        if (!retry) {
+          ngrokUrl = testUrl;
+        }
+      }
+    } catch (error) {
+      healthSpinner.fail(`Could not reach server: ${error.message}`);
+      printWarning('Make sure both the server AND ngrok are running');
+      printInfo('Terminal 1: cd event_handler && npm install && npm start');
+      printInfo('Terminal 2: ngrok http 3000');
+      const retry = await confirm('Try again?');
+      if (!retry) {
+        ngrokUrl = testUrl; // Continue anyway
+      }
+    }
   }
 
   // Set GH_WEBHOOK_URL secret
@@ -384,11 +441,29 @@ async function main() {
   if (telegramToken) {
     const webhookUrl = `${ngrokUrl}/telegram/webhook`;
     const tgSpinner = ora('Registering Telegram webhook...').start();
-    const tgResult = await setTelegramWebhook(telegramToken, webhookUrl);
+    const tgResult = await setTelegramWebhook(telegramToken, webhookUrl, telegramWebhookSecret);
     if (tgResult.ok) {
       tgSpinner.succeed(`Telegram webhook registered: ${webhookUrl}`);
     } else {
       tgSpinner.fail(`Failed: ${tgResult.description}`);
+    }
+
+    // Chat ID verification
+    const chatId = await runVerificationFlow(telegramVerification);
+
+    if (chatId) {
+      updateEnvVariable('TELEGRAM_CHAT_ID', chatId);
+      printSuccess(`Chat ID saved: ${chatId}`);
+
+      const verified = await verifyRestart(ngrokUrl, apiKey);
+      if (verified) {
+        printSuccess('Telegram bot is configured and working!');
+      } else {
+        printWarning('Could not verify bot. Check your configuration.');
+      }
+    } else {
+      printWarning('Skipped verification. Bot will accept messages from anyone.');
+      printInfo('Run npm run setup-telegram later to configure.');
     }
   }
 
