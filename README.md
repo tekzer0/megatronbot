@@ -18,7 +18,7 @@ Simple subprocess filtering. No containers-in-containers, no VM sandboxing, no c
 
 ## Quick Start
 
-[![Use this template](https://img.shields.io/badge/Use%20this%20template-238636?style=for-the-badge&logo=github)](https://github.com/new?template_owner=stephengpope&template_name=thepopebot&visibility=private)
+[![Use this template](https://img.shields.io/badge/Use%20this%20template-238636?style=for-the-badge&logo=github)](https://github.com/new?template_owner=stephengpope&template_name=thepopebot&visibility=private&description=Autonomous+AI+agents.+All+the+power.+None+of+the+leaked+API+keys.)
 
 Or fork: https://github.com/stephengpope/thepopebot/fork
 
