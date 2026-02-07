@@ -204,12 +204,22 @@ All environment variables for the Event Handler (set in `event_handler/.env`):
 
 Set automatically by the setup wizard:
 
-| Secret | Description |
-|--------|-------------|
-| `SECRETS` | Base64-encoded JSON with protected credentials |
-| `LLM_SECRETS` | Base64-encoded JSON with LLM-accessible credentials (optional) |
-| `GH_WEBHOOK_URL` | Your ngrok URL |
-| `GH_WEBHOOK_SECRET` | Random secret for webhook authentication |
+| Secret | Description | Required |
+|--------|-------------|----------|
+| `SECRETS` | Base64-encoded JSON with protected credentials | Yes |
+| `LLM_SECRETS` | Base64-encoded JSON with LLM-accessible credentials | No |
+| `GH_WEBHOOK_SECRET` | Random secret for webhook authentication | Yes |
+
+### GitHub Repository Variables
+
+Configure in **Settings → Secrets and variables → Actions → Variables**:
+
+| Variable | Description | Required | Default |
+|----------|-------------|----------|---------|
+| `GH_WEBHOOK_URL` | Event handler URL (e.g., your ngrok URL) | Yes | — |
+| `AUTO_MERGE` | Set to `false` to disable auto-merge of job PRs | No | Enabled |
+| `ALLOWED_PATHS` | Comma-separated path prefixes for auto-merge | No | `/workspace/logs` |
+| `IMAGE_URL` | Docker image path (e.g., `ghcr.io/myorg/mybot`) | No | `stephengpope/thepopebot:latest` |
 
 ### Operating System Files
 

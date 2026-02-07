@@ -8,7 +8,7 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
 import { checkPrerequisites } from './lib/prerequisites.mjs';
-import { setSecrets } from './lib/github.mjs';
+import { setVariables } from './lib/github.mjs';
 import { setTelegramWebhook, validateBotToken, generateVerificationCode } from './lib/telegram.mjs';
 import { confirm, generateTelegramWebhookSecret } from './lib/prompts.mjs';
 import { updateEnvVariable } from './lib/auth.mjs';
@@ -134,11 +134,11 @@ async function main() {
     }
   }
 
-  // Set GH_WEBHOOK_URL secret
-  const urlSpinner = ora('Updating GH_WEBHOOK_URL secret...').start();
-  const urlResult = await setSecrets(owner, repo, { GH_WEBHOOK_URL: ngrokUrl });
+  // Set GH_WEBHOOK_URL variable
+  const urlSpinner = ora('Updating GH_WEBHOOK_URL variable...').start();
+  const urlResult = await setVariables(owner, repo, { GH_WEBHOOK_URL: ngrokUrl });
   if (urlResult.GH_WEBHOOK_URL.success) {
-    urlSpinner.succeed('GH_WEBHOOK_URL secret updated');
+    urlSpinner.succeed('GH_WEBHOOK_URL variable updated');
   } else {
     urlSpinner.fail(`Failed: ${urlResult.GH_WEBHOOK_URL.error}`);
   }

@@ -23,6 +23,7 @@ import {
   validatePAT,
   checkPATScopes,
   setSecrets,
+  setVariables,
   generateWebhookSecret,
   getPATCreationURL,
 } from './lib/github.mjs';
@@ -427,11 +428,11 @@ async function main() {
     }
   }
 
-  // Set GH_WEBHOOK_URL secret
-  const urlSpinner = ora('Setting GH_WEBHOOK_URL secret...').start();
-  const urlResult = await setSecrets(owner, repo, { GH_WEBHOOK_URL: ngrokUrl });
+  // Set GH_WEBHOOK_URL variable
+  const urlSpinner = ora('Setting GH_WEBHOOK_URL variable...').start();
+  const urlResult = await setVariables(owner, repo, { GH_WEBHOOK_URL: ngrokUrl });
   if (urlResult.GH_WEBHOOK_URL.success) {
-    urlSpinner.succeed('GH_WEBHOOK_URL secret set');
+    urlSpinner.succeed('GH_WEBHOOK_URL variable set');
   } else {
     urlSpinner.fail(`Failed: ${urlResult.GH_WEBHOOK_URL.error}`);
   }
@@ -484,6 +485,8 @@ async function main() {
   console.log(chalk.bold('\n  GitHub Secrets Set:\n'));
   console.log('  • SECRETS');
   console.log('  • GH_WEBHOOK_SECRET');
+
+  console.log(chalk.bold('\n  GitHub Variables Set:\n'));
   console.log('  • GH_WEBHOOK_URL');
 
   console.log(chalk.bold.green('\n  You\'re all set!\n'));

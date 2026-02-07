@@ -287,7 +287,6 @@ on:
 |--------|-------------|
 | `SECRETS` | Base64-encoded JSON with protected credentials (GH_TOKEN, ANTHROPIC_API_KEY, etc.) |
 | `LLM_SECRETS` | Base64-encoded JSON with LLM-accessible credentials (optional) |
-| `GH_WEBHOOK_URL` | Event handler URL (e.g., `https://your-server.com`) |
 | `GH_WEBHOOK_SECRET` | Secret to authenticate with event handler |
 
 ### GitHub Repository Variables
@@ -296,6 +295,7 @@ Configure these in **Settings → Secrets and variables → Actions → Variable
 
 | Variable | Description | Default |
 |----------|-------------|---------|
+| `GH_WEBHOOK_URL` | Event handler URL (e.g., `https://your-server.com`) | — |
 | `AUTO_MERGE` | Set to `false` to disable auto-merge of job PRs | Enabled (any value except `false`) |
 | `ALLOWED_PATHS` | Comma-separated path prefixes (e.g., `/workspace/,/operating_system/`). Use `/` for all paths. | `/workspace/logs` |
 | `IMAGE_URL` | Full Docker image path (e.g., `ghcr.io/myorg/mybot`). GHCR URLs trigger automatic builds via `docker-build.yml`. Non-GHCR URLs (e.g., `docker.io/user/mybot`) are pulled directly. | Not set (uses `stephengpope/thepopebot:latest`) |

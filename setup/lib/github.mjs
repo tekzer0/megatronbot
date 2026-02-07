@@ -108,6 +108,32 @@ export async function listSecrets(owner, repo) {
 }
 
 /**
+ * Set a GitHub repository variable using gh CLI
+ */
+export async function setVariable(owner, repo, name, value) {
+  try {
+    const { stdout, stderr } = await execAsync(
+      `echo "${value.replace(/"/g, '\\"')}" | gh variable set ${name} --repo ${owner}/${repo}`,
+      { encoding: 'utf-8' }
+    );
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Set multiple GitHub repository variables
+ */
+export async function setVariables(owner, repo, variables) {
+  const results = {};
+  for (const [name, value] of Object.entries(variables)) {
+    results[name] = await setVariable(owner, repo, name, value);
+  }
+  return results;
+}
+
+/**
  * Generate a random webhook secret
  */
 export function generateWebhookSecret() {
