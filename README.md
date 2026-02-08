@@ -29,6 +29,18 @@ Autonomous AI agents. All the power. None of the leaked API keys.
 >
 > [![Fork this repo](https://img.shields.io/badge/Fork_this_repo-238636?style=for-the-badge&logo=github&logoColor=white)](https://github.com/stephengpope/thepopebot/fork)
 
+> **Step 1.5** — Make your fork private *(recommended)*:
+>
+> Your agent repository will contain configuration, logs, and references to API keys. Making it private keeps everything secure.
+>
+> 1. Go to your forked repository on GitHub
+> 2. Click the **Settings** tab
+> 3. Scroll down to the **Danger Zone** section
+> 4. Click **Change repository visibility**
+> 5. Select **Make private** and confirm
+>
+> ⚠️ *GitHub requires a paid plan (Pro, Team, or Enterprise) to fork into a private repository. If you're on a free plan, you can [duplicate the repo](https://docs.github.com/en/repositories/creating-and-managing-repositories/duplicating-a-repository) as a private repository instead of forking.*
+
 **Step 2** — Clone your fork and run the setup wizard:
 
 ```bash
