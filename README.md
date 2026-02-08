@@ -4,8 +4,10 @@ Autonomous AI agents. All the power. None of the leaked API keys.
 
 - 🔐 **Secure by default** — Other frameworks hand credentials to the LLM and hope for the best. thepopebot is different: the AI literally cannot access your secrets, even if it tries.
 - 🍴 **The repository IS the agent** — Fork it and you fork everything: code, personality, logs, history.
-- 🚀 **GitHub Actions IS the compute** — Free, isolated containers. Run one task or a thousand in parallel.
+- 🚀 **GitHub Actions IS the compute** — Free*, isolated containers. Run one task or a thousand in parallel.
 - 🧬 **Self-evolving** — The agent modifies its own code through PRs. Every change auditable, every change reversible.
+
+*\*GitHub Actions is free for public repos. Private repos get 2,000 free minutes/month on every plan, including the free tier.*
 
 ---
 
@@ -41,6 +43,8 @@ Autonomous AI agents. All the power. None of the leaked API keys.
 > **Step 1** — Fork this repository to create your own agent:
 >
 > [![Fork this repo](https://img.shields.io/badge/Fork_this_repo-238636?style=for-the-badge&logo=github&logoColor=white)](https://github.com/stephengpope/thepopebot/fork)
+>
+> **Note:** GitHub Actions are disabled by default on forks. You'll need to go to the **Actions** tab in your fork and enable them — nothing runs until you explicitly opt in.
 
 > **Step 1.5** — Make your fork private *(recommended)*:
 >
@@ -65,14 +69,13 @@ npm run setup
 > **Note:** These instructions are for local testing of the event handler. Production deployment instructions coming soon.
 
 The wizard handles everything:
-1. Checks prerequisites
+1. Checks prerequisites (Node.js, Git, GitHub CLI, ngrok)
 2. Creates a GitHub Personal Access Token (fine-grained)
-3. Collects API keys (Anthropic required, OpenAI optional for voice)
-4. Generates `event_handler/.env` for local development
-5. Sets all GitHub repository secrets
-6. Sets up Telegram bot
-7. Walks you through starting the server + ngrok
-8. Registers webhooks automatically
+3. Collects API keys (Anthropic required; OpenAI, Groq, and [Brave Search](https://api-dashboard.search.brave.com/app/keys) optional — Brave's free tier greatly improves the agent)
+4. Sets GitHub repository secrets and variables
+5. Sets up Telegram bot
+6. Walks you through starting the server + ngrok, generates `event_handler/.env`
+7. Registers webhooks and verifies everything works
 
 After setup, message your Telegram bot to create jobs!
 
@@ -121,6 +124,8 @@ thepopebot uses a two-layer architecture:
 ---
 
 ## Using Your Bot
+
+There are currently two ways to trigger jobs — Telegram and webhooks — with more integrations coming soon.
 
 ### Telegram Chat
 
