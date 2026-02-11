@@ -1,6 +1,5 @@
 # Credentials - NEVER commit these
-auth.json
-secrets.json
+
 .env
 .env.local
 *.pem
