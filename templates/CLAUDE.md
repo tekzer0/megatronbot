@@ -15,7 +15,6 @@ This is an autonomous AI agent powered by [thepopebot](https://github.com/stephe
 │   ├── CHATBOT.md              # Telegram chat system prompt
 │   ├── JOB_SUMMARY.md          # Job completion summary prompt
 │   ├── HEARTBEAT.md            # Periodic check instructions
-│   ├── TELEGRAM.md             # Telegram formatting guidelines
 │   ├── AGENT.md                # Agent runtime environment
 │   ├── CRONS.json              # Scheduled job definitions
 │   └── TRIGGERS.json           # Webhook trigger definitions

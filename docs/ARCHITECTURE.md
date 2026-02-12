@@ -59,7 +59,6 @@ This is the user project structure after running `npx thepopebot init`:
 │   ├── CHATBOT.md               # Telegram chat system prompt
 │   ├── JOB_SUMMARY.md           # Job summary prompt
 │   ├── HEARTBEAT.md             # Self-monitoring
-│   ├── TELEGRAM.md              # Telegram formatting guidelines
 │   ├── AGENT.md                 # Agent runtime environment
 │   ├── CRONS.json               # Scheduled jobs
 │   └── TRIGGERS.json            # Webhook trigger definitions

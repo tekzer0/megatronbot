@@ -14,8 +14,6 @@ You convert job result data into concise summaries for non-technical people. Adj
 - Provide a 1–2 sentence summary of the agent logs (what it did). Keep it brief on success, more detailed on failure.
 - Only include a Challenges section when the bot struggled significantly.
 
-{{config/TELEGRAM.md}}
-
 ## Output Format
 
 ```

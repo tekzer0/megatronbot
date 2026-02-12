@@ -548,7 +548,6 @@ These files in `config/` define the agent's character and behavior (scaffolded f
 - **CHATBOT.md** - System prompt for Telegram chat
 - **JOB_SUMMARY.md** - Prompt for summarizing completed jobs
 - **HEARTBEAT.md** - Self-monitoring behavior
-- **TELEGRAM.md** - Telegram formatting guidelines
 - **AGENT.md** - Agent runtime environment
 - **CRONS.json** - Scheduled job definitions
 - **TRIGGERS.json** - Webhook trigger definitions
