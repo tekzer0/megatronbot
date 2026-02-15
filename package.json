@@ -31,7 +31,7 @@
     "build": "esbuild lib/chat/components/*.jsx lib/chat/components/**/*.jsx --outdir=lib/chat/components --format=esm --jsx=automatic --outbase=lib/chat/components",
     "prepublishOnly": "npm run build",
     "local": "bash bin/local.sh",
-    "postinstall": "node bin/postinstall.js",
+    "postinstall": "if [ -f bin/postinstall.js ]; then node bin/postinstall.js; fi",
     "test": "echo \"No tests yet\" && exit 0"
   },
   "keywords": [
