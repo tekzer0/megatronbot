@@ -1,9 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { AppSidebar } from './app-sidebar.js';
-import { SidebarProvider, SidebarInset } from './ui/sidebar.js';
-import { ChatNavProvider } from './chat-nav-context.js';
+import { PageLayout } from './page-layout.js';
 import { BellIcon } from './icons.js';
 import { getNotifications, markNotificationsRead } from '../actions.js';
 
@@ -24,14 +22,6 @@ export function NotificationsPage({ session }) {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const navigateToChat = (id) => {
-    if (id) {
-      window.location.href = `/chat/${id}`;
-    } else {
-      window.location.href = '/';
-    }
-  };
-
   useEffect(() => {
     async function load() {
       try {
@@ -49,52 +39,45 @@ export function NotificationsPage({ session }) {
   }, []);
 
   return (
-    <ChatNavProvider value={{ activeChatId: null, navigateToChat }}>
-      <SidebarProvider>
-        <AppSidebar user={session.user} />
-        <SidebarInset>
-          <div className="flex flex-col h-full max-w-3xl mx-auto w-full px-4 py-6">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-6">
-              <h1 className="text-2xl font-semibold">Notifications</h1>
+    <PageLayout session={session}>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-semibold">Notifications</h1>
+      </div>
+
+      {/* Count */}
+      <p className="text-sm text-muted-foreground mb-4">
+        {notifications.length} {notifications.length === 1 ? 'notification' : 'notifications'}
+      </p>
+
+      {/* Notification list */}
+      {loading ? (
+        <div className="flex flex-col gap-3">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="h-14 animate-pulse rounded-md bg-border/50" />
+          ))}
+        </div>
+      ) : notifications.length === 0 ? (
+        <p className="text-sm text-muted-foreground py-8 text-center">
+          No notifications yet.
+        </p>
+      ) : (
+        <div className="flex flex-col divide-y divide-border">
+          {notifications.map((n) => (
+            <div key={n.id} className="flex items-start gap-3 px-3 py-3">
+              <div className="mt-0.5 shrink-0 text-muted-foreground">
+                <BellIcon size={16} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm whitespace-pre-wrap">{n.notification}</p>
+                <span className="text-xs text-muted-foreground">
+                  {timeAgo(n.createdAt)}
+                </span>
+              </div>
             </div>
-
-            {/* Count */}
-            <p className="text-sm text-muted-foreground mb-4">
-              {notifications.length} {notifications.length === 1 ? 'notification' : 'notifications'}
-            </p>
-
-            {/* Notification list */}
-            {loading ? (
-              <div className="flex flex-col gap-3">
-                {[...Array(5)].map((_, i) => (
-                  <div key={i} className="h-14 animate-pulse rounded-md bg-border/50" />
-                ))}
-              </div>
-            ) : notifications.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-8 text-center">
-                No notifications yet.
-              </p>
-            ) : (
-              <div className="flex flex-col divide-y divide-border">
-                {notifications.map((n) => (
-                  <div key={n.id} className="flex items-start gap-3 px-3 py-3">
-                    <div className="mt-0.5 shrink-0 text-muted-foreground">
-                      <BellIcon size={16} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm whitespace-pre-wrap">{n.notification}</p>
-                      <span className="text-xs text-muted-foreground">
-                        {timeAgo(n.createdAt)}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </SidebarInset>
-      </SidebarProvider>
-    </ChatNavProvider>
+          ))}
+        </div>
+      )}
+    </PageLayout>
   );
 }

@@ -37,31 +37,18 @@ export async function runVerificationFlow(verificationCode, { allowSkip = false 
 /**
  * Wait for server to pick up .env changes and verify it's running
  * @param {string} ngrokUrl - The ngrok URL
- * @param {string} apiKey - The API key for authentication
  * @returns {Promise<boolean>} - True if verified successfully
  */
-export async function verifyRestart(ngrokUrl, apiKey) {
+export async function verifyRestart(ngrokUrl) {
   console.log(chalk.dim('\n  Waiting for server to pick up changes...\n'));
   await new Promise(resolve => setTimeout(resolve, 3000));
 
-  // Verify server is up
+  // Verify server is up (any HTTP response means it's running)
   try {
-    const response = await fetch(`${ngrokUrl}/api/ping`, {
+    await fetch(`${ngrokUrl}/api/ping`, {
       method: 'GET',
-      headers: { 'x-api-key': apiKey },
       signal: AbortSignal.timeout(10000)
     });
-
-    if (!response.ok) {
-      console.log(chalk.red('  ✗ Could not reach server.\n'));
-      return false;
-    }
-
-    const data = await response.json();
-    if (data.message !== 'Pong!') {
-      console.log(chalk.red('  ✗ Unexpected server response.\n'));
-      return false;
-    }
   } catch (err) {
     console.log(chalk.red(`  ✗ Server not reachable: ${err.message}\n`));
     return false;

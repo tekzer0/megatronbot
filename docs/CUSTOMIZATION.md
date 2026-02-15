@@ -45,7 +45,7 @@ The bot automatically detects voice messages and transcribes them before process
 Create jobs programmatically via HTTP:
 
 ```bash
-curl -X POST http://localhost:3000/api/webhook \
+curl -X POST http://localhost:3000/api/create-job \
   -H "Content-Type: application/json" \
   -H "x-api-key: YOUR_API_KEY" \
   -d '{"job": "Update the README with installation instructions"}'

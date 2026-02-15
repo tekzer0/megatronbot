@@ -134,6 +134,11 @@ thepopebot is an **NPM package** for creating custom autonomous AI agents. Users
 | `thepopebot/db` | `lib/db/index.js` | Database access |
 | `thepopebot/middleware` | `lib/auth/middleware.js` | Auth middleware |
 
+### Column Naming Convention
+
+Drizzle schema uses camelCase JS property names mapped to snake_case SQL columns.
+Example: `createdAt: integer('created_at')` — use `createdAt` in JS, SQL column is `created_at`.
+
 ## CLI Commands
 
 | Command | Description |
@@ -213,7 +218,7 @@ The Event Handler is a Next.js API route handler (`api/index.js`) that provides 
 
 | Endpoint | Method | Purpose |
 |----------|--------|---------|
-| `/api/webhook` | POST | Generic webhook for job creation (requires API_KEY) |
+| `/api/create-job` | POST | Generic webhook for job creation (requires API_KEY) |
 | `/api/telegram/webhook` | POST | Telegram bot webhook for conversational interface |
 | `/api/telegram/register` | POST | Register Telegram webhook URL |
 | `/api/github/webhook` | POST | Receives notifications from GitHub Actions (update-event-handler.yml) |
@@ -406,7 +411,7 @@ Both `job` and `command` strings support the same templates:
 
 | Variable | Description | Required |
 |----------|-------------|----------|
-| `API_KEY` | Authentication key for /api/webhook endpoint | Yes |
+| `API_KEY` | Authentication key for /api/create-job endpoint | Yes |
 | `GH_TOKEN` | GitHub PAT for creating branches/files | Yes |
 | `GH_OWNER` | GitHub repository owner | Yes |
 | `GH_REPO` | GitHub repository name | Yes |

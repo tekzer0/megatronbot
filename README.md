@@ -111,7 +111,7 @@ The wizard walks you through everything:
 **Step 3** — Start using your agent:
 
 - **Telegram**: Message your bot to create jobs conversationally. Ask it to do tasks, check job status, or just chat.
-- **Webhook**: Send a POST to `/api/webhook` with your API key to create jobs programmatically.
+- **Webhook**: Send a POST to `/api/create-job` with your API key to create jobs programmatically.
 - **Cron**: Edit `config/CRONS.json` to schedule recurring jobs.
 
 ---

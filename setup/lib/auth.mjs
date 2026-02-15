@@ -99,7 +99,6 @@ export function writeModelsJson(providerName, { baseUrl, apiKey, api, models }) 
  */
 export function writeEnvFile(config) {
   const {
-    apiKey,
     githubToken,
     githubOwner,
     githubRepo,
@@ -130,9 +129,6 @@ export function writeEnvFile(config) {
 
 # Auth.js secret (used for session encryption)
 AUTH_SECRET=${authSecret}
-
-# Authentication key for /api/webhook endpoint
-API_KEY=${apiKey}
 
 # GitHub Personal Access Token (fine-grained: Actions, Contents, Metadata, Pull requests)
 GH_TOKEN=${githubToken}

@@ -91,7 +91,7 @@ The Event Handler is a Next.js API route handler that provides orchestration cap
 | Endpoint | Method | API_KEY | Purpose |
 |----------|--------|---------|---------|
 | `/api/ping` | GET | N | Health check, returns `{"message": "Pong!"}` |
-| `/api/webhook` | POST | Y | Generic webhook for job creation |
+| `/api/create-job` | POST | Y | Generic webhook for job creation |
 | `/api/telegram/webhook` | POST | N | Telegram bot webhook (uses its own secret) |
 | `/api/telegram/register` | POST | Y | Register Telegram webhook URL |
 | `/api/github/webhook` | POST | N | Receives notifications from GitHub Actions (uses its own secret) |
@@ -102,7 +102,7 @@ The Event Handler is a Next.js API route handler that provides orchestration cap
 Create a job via webhook:
 
 ```bash
-curl -X POST http://localhost:3000/api/webhook \
+curl -X POST http://localhost:3000/api/create-job \
   -H "Content-Type: application/json" \
   -H "x-api-key: YOUR_API_KEY" \
   -d '{"job": "Update the README with installation instructions"}'

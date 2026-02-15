@@ -1,9 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { AppSidebar } from './app-sidebar.js';
-import { SidebarProvider, SidebarInset } from './ui/sidebar.js';
-import { ChatNavProvider } from './chat-nav-context.js';
+import { PageLayout } from './page-layout.js';
 import { MessageIcon, TrashIcon, SearchIcon, PlusIcon } from './icons.js';
 import { getChats, deleteChat } from '../actions.js';
 import { cn } from '../utils.js';
@@ -60,11 +58,7 @@ export function ChatsPage({ session }) {
   const [query, setQuery] = useState('');
 
   const navigateToChat = (id) => {
-    if (id) {
-      window.location.href = `/chat/${id}`;
-    } else {
-      window.location.href = '/';
-    }
+    window.location.href = id ? `/chat/${id}` : '/';
   };
 
   const loadChats = async () => {
@@ -102,80 +96,73 @@ export function ChatsPage({ session }) {
   const grouped = groupChatsByDate(filtered);
 
   return (
-    <ChatNavProvider value={{ activeChatId: null, navigateToChat }}>
-      <SidebarProvider>
-        <AppSidebar user={session.user} />
-        <SidebarInset>
-          <div className="flex flex-col h-full max-w-3xl mx-auto w-full px-4 py-6">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-6">
-              <h1 className="text-2xl font-semibold">Chats</h1>
-              <button
-                onClick={() => navigateToChat(null)}
-                className="inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium bg-foreground text-background hover:bg-foreground/90"
-              >
-                <PlusIcon size={14} />
-                New chat
-              </button>
-            </div>
+    <PageLayout session={session}>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-semibold">Chats</h1>
+        <button
+          onClick={() => navigateToChat(null)}
+          className="inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium bg-foreground text-background hover:bg-foreground/90"
+        >
+          <PlusIcon size={14} />
+          New chat
+        </button>
+      </div>
 
-            {/* Search */}
-            <div className="relative mb-4">
-              <input
-                type="text"
-                placeholder="Search your chats..."
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                className="w-full rounded-md border border-input bg-background px-9 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-              />
-              <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none">
-                <SearchIcon size={16} />
-              </div>
-            </div>
+      {/* Search */}
+      <div className="relative mb-4">
+        <input
+          type="text"
+          placeholder="Search your chats..."
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          className="w-full rounded-md border border-input bg-background px-9 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+        />
+        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none">
+          <SearchIcon size={16} />
+        </div>
+      </div>
 
-            {/* Count */}
-            <p className="text-sm text-muted-foreground mb-4">
-              {filtered.length} {filtered.length === 1 ? 'chat' : 'chats'}
-            </p>
+      {/* Count */}
+      <p className="text-sm text-muted-foreground mb-4">
+        {filtered.length} {filtered.length === 1 ? 'chat' : 'chats'}
+      </p>
 
-            {/* Chat list */}
-            {loading ? (
-              <div className="flex flex-col gap-3">
-                {[...Array(5)].map((_, i) => (
-                  <div key={i} className="h-14 animate-pulse rounded-md bg-border/50" />
-                ))}
+      {/* Chat list */}
+      {loading ? (
+        <div className="flex flex-col gap-3">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="h-14 animate-pulse rounded-md bg-border/50" />
+          ))}
+        </div>
+      ) : filtered.length === 0 ? (
+        <p className="text-sm text-muted-foreground py-8 text-center">
+          {query ? 'No chats match your search.' : 'No chats yet. Start a conversation!'}
+        </p>
+      ) : (
+        <div className="flex flex-col">
+          {Object.entries(grouped).map(([label, groupChats]) =>
+            groupChats.length > 0 ? (
+              <div key={label} className="mb-4">
+                <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
+                  {label}
+                </h2>
+                <div className="flex flex-col divide-y divide-border">
+                  {groupChats.map((chat) => (
+                    <ChatRow
+                      key={chat.id}
+                      chat={chat}
+                      onNavigate={navigateToChat}
+                      onDelete={handleDelete}
+                    />
+                  ))}
+                </div>
               </div>
-            ) : filtered.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-8 text-center">
-                {query ? 'No chats match your search.' : 'No chats yet. Start a conversation!'}
-              </p>
-            ) : (
-              <div className="flex flex-col">
-                {Object.entries(grouped).map(([label, groupChats]) =>
-                  groupChats.length > 0 ? (
-                    <div key={label} className="mb-4">
-                      <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
-                        {label}
-                      </h2>
-                      <div className="flex flex-col divide-y divide-border">
-                        {groupChats.map((chat) => (
-                          <ChatRow
-                            key={chat.id}
-                            chat={chat}
-                            onNavigate={navigateToChat}
-                            onDelete={handleDelete}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  ) : null
-                )}
-              </div>
-            )}
-          </div>
-        </SidebarInset>
-      </SidebarProvider>
-    </ChatNavProvider>
+            ) : null
+          )}
+        </div>
+      )}
+    </PageLayout>
   );
 }
 

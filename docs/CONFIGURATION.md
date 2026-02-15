@@ -6,7 +6,7 @@ All environment variables for the Event Handler (set in `.env` in your project r
 
 | Variable | Description | Required |
 |----------|-------------|----------|
-| `API_KEY` | Authentication key for `/api/webhook` and other protected endpoints | Yes |
+| `API_KEY` | Authentication key for `/api/create-job` and other protected endpoints | Yes |
 | `GH_TOKEN` | GitHub PAT for creating branches/files | Yes |
 | `GH_OWNER` | GitHub repository owner | Yes |
 | `GH_REPO` | GitHub repository name | Yes |

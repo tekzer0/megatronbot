@@ -88,40 +88,14 @@ async function main() {
 
     // Verify the server is reachable through ngrok
     const healthSpinner = ora('Verifying server is reachable...').start();
-    const apiKey = env?.API_KEY;
     try {
-      const response = await fetch(`${testUrl}/api/ping`, {
+      await fetch(`${testUrl}/api/ping`, {
         method: 'GET',
-        headers: apiKey ? { 'x-api-key': apiKey } : {},
         signal: AbortSignal.timeout(10000)
       });
-      if (response.ok) {
-        const data = await response.json();
-        if (data.message === 'Pong!') {
-          healthSpinner.succeed('Server is reachable and authenticated');
-          ngrokUrl = testUrl;
-        } else {
-          healthSpinner.fail('Unexpected response from server');
-          const retry = await confirm('Try again?');
-          if (!retry) {
-            ngrokUrl = testUrl;
-          }
-        }
-      } else if (response.status === 401) {
-        healthSpinner.fail('Server responded but API key mismatch');
-        printWarning('Check that API_KEY in .env matches the running server');
-        const retry = await confirm('Try again?');
-        if (!retry) {
-          ngrokUrl = testUrl;
-        }
-      } else {
-        healthSpinner.fail(`Server returned status ${response.status}`);
-        printWarning('Make sure the server is running (npm run dev)');
-        const retry = await confirm('Try again?');
-        if (!retry) {
-          ngrokUrl = testUrl;
-        }
-      }
+      // Any HTTP response means the server is reachable
+      healthSpinner.succeed('Server is reachable');
+      ngrokUrl = testUrl;
     } catch (error) {
       healthSpinner.fail(`Could not reach server: ${error.message}`);
       printWarning('Make sure both the server AND ngrok are running');

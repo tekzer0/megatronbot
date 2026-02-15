@@ -1,9 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { AppSidebar } from './app-sidebar.js';
-import { SidebarProvider, SidebarInset } from './ui/sidebar.js';
-import { ChatNavProvider } from './chat-nav-context.js';
+import { PageLayout } from './page-layout.js';
 import { ClockIcon, SpinnerIcon, ChevronDownIcon } from './icons.js';
 import { getSwarmConfig } from '../actions.js';
 
@@ -155,14 +153,6 @@ export function CronsPage({ session }) {
   const [crons, setCrons] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const navigateToChat = (id) => {
-    if (id) {
-      window.location.href = `/chat/${id}`;
-    } else {
-      window.location.href = '/';
-    }
-  };
-
   useEffect(() => {
     getSwarmConfig()
       .then((data) => {
@@ -175,47 +165,40 @@ export function CronsPage({ session }) {
   const enabledCount = crons.filter((c) => c.enabled !== false).length;
 
   return (
-    <ChatNavProvider value={{ activeChatId: null, navigateToChat }}>
-      <SidebarProvider>
-        <AppSidebar user={session.user} />
-        <SidebarInset>
-          <div className="flex flex-col h-full max-w-4xl mx-auto w-full px-4 py-6">
-            {/* Header */}
-            <div className="mb-6">
-              <h1 className="text-2xl font-semibold">Cron Jobs</h1>
-              {!loading && (
-                <p className="text-sm text-muted-foreground mt-1">
-                  {crons.length} job{crons.length !== 1 ? 's' : ''} configured, {enabledCount} enabled
-                </p>
-              )}
-            </div>
+    <PageLayout session={session}>
+      {/* Header */}
+      <div className="mb-6">
+        <h1 className="text-2xl font-semibold">Cron Jobs</h1>
+        {!loading && (
+          <p className="text-sm text-muted-foreground mt-1">
+            {crons.length} job{crons.length !== 1 ? 's' : ''} configured, {enabledCount} enabled
+          </p>
+        )}
+      </div>
 
-            {loading ? (
-              <div className="flex flex-col gap-3">
-                {[...Array(3)].map((_, i) => (
-                  <div key={i} className="h-20 animate-pulse rounded-lg bg-border/50" />
-                ))}
-              </div>
-            ) : crons.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-16 text-center">
-                <div className="rounded-full bg-muted p-4 mb-4">
-                  <ClockIcon size={24} />
-                </div>
-                <p className="text-sm font-medium mb-1">No cron jobs configured</p>
-                <p className="text-xs text-muted-foreground max-w-sm">
-                  Add scheduled jobs by editing <span className="font-mono">config/CRONS.json</span> in your project.
-                </p>
-              </div>
-            ) : (
-              <div className="flex flex-col gap-3">
-                {crons.map((cron, i) => (
-                  <CronCard key={i} cron={cron} />
-                ))}
-              </div>
-            )}
+      {loading ? (
+        <div className="flex flex-col gap-3">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="h-20 animate-pulse rounded-lg bg-border/50" />
+          ))}
+        </div>
+      ) : crons.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <div className="rounded-full bg-muted p-4 mb-4">
+            <ClockIcon size={24} />
           </div>
-        </SidebarInset>
-      </SidebarProvider>
-    </ChatNavProvider>
+          <p className="text-sm font-medium mb-1">No cron jobs configured</p>
+          <p className="text-xs text-muted-foreground max-w-sm">
+            Add scheduled jobs by editing <span className="font-mono">config/CRONS.json</span> in your project.
+          </p>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-3">
+          {crons.map((cron, i) => (
+            <CronCard key={i} cron={cron} />
+          ))}
+        </div>
+      )}
+    </PageLayout>
   );
 }

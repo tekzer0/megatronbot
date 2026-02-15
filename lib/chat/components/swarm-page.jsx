@@ -1,9 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { AppSidebar } from './app-sidebar.js';
-import { SidebarProvider, SidebarInset } from './ui/sidebar.js';
-import { ChatNavProvider } from './chat-nav-context.js';
+import { PageLayout } from './page-layout.js';
 import { StopIcon, SpinnerIcon, RefreshIcon } from './icons.js';
 import { getSwarmStatus, cancelSwarmJob, rerunSwarmJob } from '../actions.js';
 
@@ -254,14 +252,6 @@ export function SwarmPage({ session }) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  const navigateToChat = (id) => {
-    if (id) {
-      window.location.href = `/chat/${id}`;
-    } else {
-      window.location.href = '/';
-    }
-  };
-
   const fetchStatus = useCallback(async () => {
     try {
       const data = await getSwarmStatus();
@@ -304,70 +294,63 @@ export function SwarmPage({ session }) {
   };
 
   return (
-    <ChatNavProvider value={{ activeChatId: null, navigateToChat }}>
-      <SidebarProvider>
-        <AppSidebar user={session.user} />
-        <SidebarInset>
-          <div className="flex flex-col h-full max-w-4xl mx-auto w-full px-4 py-6">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-6">
-              <h1 className="text-2xl font-semibold">Swarm</h1>
-              {!loading && (
-                <button
-                  onClick={handleRefresh}
-                  disabled={refreshing}
-                  className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium border border-border bg-background text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-50 disabled:pointer-events-none"
-                >
-                  {refreshing ? (
-                    <>
-                      <SpinnerIcon size={14} />
-                      Refreshing...
-                    </>
-                  ) : (
-                    <>
-                      <RefreshIcon size={14} />
-                      Refresh
-                    </>
-                  )}
-                </button>
-              )}
-            </div>
-
-            {loading ? (
-              <LoadingSkeleton />
+    <PageLayout session={session}>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-semibold">Swarm</h1>
+        {!loading && (
+          <button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium border border-border bg-background text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-50 disabled:pointer-events-none"
+          >
+            {refreshing ? (
+              <>
+                <SpinnerIcon size={14} />
+                Refreshing...
+              </>
             ) : (
-              <div className="flex flex-col gap-6">
-                {/* Summary Cards */}
-                {swarmData?.counts && (
-                  <SwarmSummaryCards counts={swarmData.counts} />
-                )}
-
-                {/* Active Jobs */}
-                <div>
-                  <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-3">
-                    Active Jobs
-                  </h2>
-                  <SwarmActiveJobs
-                    jobs={swarmData?.active}
-                    onCancel={handleCancel}
-                  />
-                </div>
-
-                {/* Job History */}
-                <div>
-                  <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-3">
-                    Recent History
-                  </h2>
-                  <SwarmJobHistory
-                    jobs={swarmData?.completed}
-                    onRerun={handleRerun}
-                  />
-                </div>
-              </div>
+              <>
+                <RefreshIcon size={14} />
+                Refresh
+              </>
             )}
+          </button>
+        )}
+      </div>
+
+      {loading ? (
+        <LoadingSkeleton />
+      ) : (
+        <div className="flex flex-col gap-6">
+          {/* Summary Cards */}
+          {swarmData?.counts && (
+            <SwarmSummaryCards counts={swarmData.counts} />
+          )}
+
+          {/* Active Jobs */}
+          <div>
+            <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-3">
+              Active Jobs
+            </h2>
+            <SwarmActiveJobs
+              jobs={swarmData?.active}
+              onCancel={handleCancel}
+            />
           </div>
-        </SidebarInset>
-      </SidebarProvider>
-    </ChatNavProvider>
+
+          {/* Job History */}
+          <div>
+            <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-3">
+              Recent History
+            </h2>
+            <SwarmJobHistory
+              jobs={swarmData?.completed}
+              onRerun={handleRerun}
+            />
+          </div>
+        </div>
+      )}
+    </PageLayout>
   );
 }

@@ -190,6 +190,7 @@ export function AppSidebar({ user }) {
               )}
             </Tooltip>
           </SidebarMenuItem>
+
         </SidebarMenu>
       </SidebarHeader>
 

@@ -15,7 +15,7 @@ The Event Handler Next.js application (`api/index.js`) is deployed to the public
 **Changes:**
 - Add rate limiting via Next.js middleware or per-handler logic (Next.js does not use Express middleware)
 - Add stricter per-endpoint limits:
-  - `/api/webhook` — 10 req/min (creates expensive Docker jobs)
+  - `/api/create-job` — 10 req/min (creates expensive Docker jobs)
   - `/api/telegram/webhook` — 30 req/min (triggers Claude API calls)
   - `/api/github/webhook` — 20 req/min
   - `/api/jobs/status` — 30 req/min
@@ -88,7 +88,7 @@ Or validate body size manually in the POST handler.
 
 ## 5. Job Description Validation (HIGH)
 
-**Problem:** No length or type validation on the `job` field from `/api/webhook`. Could create huge files via GitHub API.
+**Problem:** No length or type validation on the `job` field from `/api/create-job`. Could create huge files via GitHub API.
 
 **File:** `api/index.js`
 
@@ -266,7 +266,7 @@ RUN git clone https://github.com/badlogic/pi-skills.git /pi-skills && \
 ## Verification
 
 1. **Start server locally:** `npm run dev`
-2. **Test rate limiting:** Send rapid requests to `/api/webhook` and verify 429 responses after limit
+2. **Test rate limiting:** Send rapid requests to `/api/create-job` and verify 429 responses after limit
 3. **Test auth:** Send requests without API key, with wrong key — verify 401
 4. **Test webhook secrets:** Send to `/api/telegram/webhook` and `/api/github/webhook` without secrets — verify rejection
 5. **Test job validation:** POST oversized `job` field — verify 400

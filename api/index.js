@@ -1,3 +1,4 @@
+import { createHash, timingSafeEqual } from 'crypto';
 import { createJob } from '../lib/tools/create-job.js';
 import { setWebhook } from '../lib/tools/telegram.js';
 import { getJobStatus } from '../lib/tools/github.js';
@@ -5,6 +6,7 @@ import { getTelegramAdapter } from '../lib/channels/index.js';
 import { chat, summarizeJob } from '../lib/ai/index.js';
 import { createNotification } from '../lib/db/notifications.js';
 import { loadTriggers } from '../lib/triggers.js';
+import { verifyApiKey } from '../lib/db/api-keys.js';
 
 // Bot token from env, can be overridden by /telegram/register
 let telegramBotToken = null;
@@ -31,8 +33,22 @@ function getFireTriggers() {
 const PUBLIC_ROUTES = ['/telegram/webhook', '/github/webhook'];
 
 /**
+ * Timing-safe string comparison.
+ * @param {string} a
+ * @param {string} b
+ * @returns {boolean}
+ */
+function safeCompare(a, b) {
+  if (!a || !b) return false;
+  const bufA = Buffer.from(a);
+  const bufB = Buffer.from(b);
+  if (bufA.length !== bufB.length) return false;
+  return timingSafeEqual(bufA, bufB);
+}
+
+/**
  * Centralized auth gate for all API routes.
- * Public routes pass through; everything else requires API_KEY.
+ * Public routes pass through; everything else requires a valid API key from the database.
  * @param {string} routePath - The route path
  * @param {Request} request - The incoming request
  * @returns {Response|null} - Error response or null if authorized
@@ -41,9 +57,15 @@ function checkAuth(routePath, request) {
   if (PUBLIC_ROUTES.includes(routePath)) return null;
 
   const apiKey = request.headers.get('x-api-key');
-  if (apiKey !== process.env.API_KEY) {
+  if (!apiKey) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
+
+  const record = verifyApiKey(apiKey);
+  if (!record) {
+    return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   return null;
 }
 
@@ -139,10 +161,10 @@ async function processChannelMessage(adapter, normalized) {
 async function handleGithubWebhook(request) {
   const { GH_WEBHOOK_SECRET } = process.env;
 
-  // Validate webhook secret
+  // Validate webhook secret (timing-safe)
   if (GH_WEBHOOK_SECRET) {
     const headerSecret = request.headers.get('x-github-webhook-secret-token');
-    if (headerSecret !== GH_WEBHOOK_SECRET) {
+    if (!safeCompare(headerSecret, GH_WEBHOOK_SECRET)) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
   }
@@ -214,7 +236,7 @@ async function POST(request) {
 
   // Route to handler
   switch (routePath) {
-    case '/webhook':            return handleWebhook(request);
+    case '/create-job':          return handleWebhook(request);
     case '/telegram/webhook':   return handleTelegramWebhook(request);
     case '/telegram/register':  return handleTelegramRegister(request);
     case '/github/webhook':     return handleGithubWebhook(request);

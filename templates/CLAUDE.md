@@ -66,7 +66,7 @@ All API routes are under `/api/`:
 
 | Endpoint | Method | Purpose |
 |----------|--------|---------|
-| `/api/webhook` | POST | Create a new job (requires API_KEY) |
+| `/api/create-job` | POST | Create a new job (requires API_KEY) |
 | `/api/telegram/webhook` | POST | Telegram bot webhook |
 | `/api/telegram/register` | POST | Register Telegram webhook URL |
 | `/api/github/webhook` | POST | Receives notifications from GitHub Actions |

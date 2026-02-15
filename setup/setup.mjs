@@ -508,12 +508,10 @@ async function main() {
   }
 
   // Write .env file (now at project root, not event_handler/)
-  const apiKey = generateWebhookSecret().slice(0, 32); // Random API key for webhook endpoint
   const telegramVerification = telegramToken ? generateVerificationCode() : null;
   const providerConfig = agentProvider !== 'custom' ? PROVIDERS[agentProvider] : null;
   const providerEnvKey = providerConfig ? providerConfig.envKey : 'CUSTOM_API_KEY';
   const envPath = writeEnvFile({
-    apiKey,
     githubToken: pat,
     githubOwner: owner,
     githubRepo: repo,
@@ -543,15 +541,11 @@ async function main() {
     try {
       const response = await fetch('http://localhost:3000/api/ping', {
         method: 'GET',
-        headers: { 'x-api-key': apiKey },
         signal: AbortSignal.timeout(5000),
       });
-      if (response.ok) {
-        serverSpinner.succeed('Server is running');
-        serverReachable = true;
-      } else {
-        serverSpinner.fail(`Server returned status ${response.status}`);
-      }
+      // Any HTTP response means the server is running (even 401)
+      serverSpinner.succeed('Server is running');
+      serverReachable = true;
     } catch {
       serverSpinner.fail('Could not reach server on localhost:3000');
     }
@@ -587,15 +581,11 @@ async function main() {
     try {
       const response = await fetch(`${candidate}/api/ping`, {
         method: 'GET',
-        headers: { 'x-api-key': apiKey },
         signal: AbortSignal.timeout(10000),
       });
-      if (response.ok) {
-        ngrokSpinner.succeed('Server is reachable through ngrok');
-        ngrokUrl = candidate;
-      } else {
-        ngrokSpinner.fail(`Server returned status ${response.status}`);
-      }
+      // Any HTTP response means the server is reachable (even 401)
+      ngrokSpinner.succeed('Server is reachable through ngrok');
+      ngrokUrl = candidate;
     } catch {
       ngrokSpinner.fail('Could not reach server through ngrok');
     }
@@ -640,7 +630,7 @@ async function main() {
         updateEnvVariable('TELEGRAM_CHAT_ID', chatId);
         printSuccess(`Chat ID saved: ${chatId}`);
 
-        const verified = await verifyRestart(ngrokUrl, apiKey);
+        const verified = await verifyRestart(ngrokUrl);
         if (verified) {
           printSuccess('Telegram bot is configured and working!');
         } else {
@@ -687,7 +677,7 @@ async function main() {
   if (telegramToken) {
     console.log(chalk.cyan('  Message your Telegram bot to create your first job!'));
   } else {
-    console.log(chalk.dim('  Use the /api/webhook endpoint to create jobs.'));
+    console.log(chalk.dim('  Use the /api/create-job endpoint to create jobs.'));
   }
 
   console.log('\n');
