@@ -39,6 +39,7 @@ jobs:
           THEPOPEBOT_VERSION: ${{ steps.version.outputs.tag }}
           LLM_MODEL: ${{ vars.LLM_MODEL }}
           LLM_PROVIDER: ${{ vars.LLM_PROVIDER }}
+          OPENAI_BASE_URL: ${{ vars.OPENAI_BASE_URL }}
         run: |
           if [ -n "$JOB_IMAGE_URL" ]; then
             IMAGE="${JOB_IMAGE_URL}:latest"
@@ -53,4 +54,5 @@ jobs:
             -e LLM_SECRETS='${{ secrets.LLM_SECRETS }}' \
             -e LLM_MODEL="${LLM_MODEL}" \
             -e LLM_PROVIDER="${LLM_PROVIDER}" \
+            -e OPENAI_BASE_URL="${OPENAI_BASE_URL}" \
             "$IMAGE"

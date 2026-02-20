@@ -67,6 +67,9 @@ for i in "${!SYSTEM_FILES[@]}"; do
     fi
 done
 
+# Resolve {{datetime}} variable in SYSTEM.md
+sed -i "s/{{datetime}}/$(date -u +"%Y-%m-%dT%H:%M:%SZ")/g" /job/.pi/SYSTEM.md
+
 PROMPT="
 
 # Your Job
@@ -80,7 +83,27 @@ if [ -n "$LLM_MODEL" ]; then
     MODEL_FLAGS="$MODEL_FLAGS --model $LLM_MODEL"
 fi
 
-# Copy custom models.json to PI's global config if present in repo
+# Generate models.json for custom provider (OpenAI-compatible endpoints like Ollama)
+if [ "$LLM_PROVIDER" = "custom" ] && [ -n "$OPENAI_BASE_URL" ]; then
+    # If no API key was provided, set a dummy so Pi doesn't send empty auth
+    if [ -z "$CUSTOM_API_KEY" ]; then
+        export CUSTOM_API_KEY="not-needed"
+    fi
+    cat > /root/.pi/agent/models.json <<MODELS
+{
+  "providers": {
+    "custom": {
+      "baseUrl": "$OPENAI_BASE_URL",
+      "api": "openai-completions",
+      "apiKey": "CUSTOM_API_KEY",
+      "models": [{ "id": "$LLM_MODEL" }]
+    }
+  }
+}
+MODELS
+fi
+
+# Copy custom models.json to PI's global config if present in repo (overrides generated)
 if [ -f "/job/.pi/agent/models.json" ]; then
     mkdir -p /root/.pi/agent
     cp /job/.pi/agent/models.json /root/.pi/agent/models.json

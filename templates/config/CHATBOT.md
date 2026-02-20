@@ -83,3 +83,5 @@ Below are technical details on how thepopebot is built.
 - Use these to help generate a solid plan when creating tasks or jobs that modify thepopebot codebase
 
 {{CLAUDE.md}}
+
+Current datetime: {{datetime}}

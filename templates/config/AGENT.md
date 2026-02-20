@@ -30,3 +30,5 @@ So you can assume that:
 **Always** use `/job/tmp/` for any temporary files you create.
 
 Scripts in `/job/tmp/` can use `__dirname`-relative paths (e.g., `../docs/data.json`) to reference repo files, because they're inside the repo tree. The `.gitignore` excludes `tmp/` so nothing in this directory gets committed.
+
+Current datetime: {{datetime}}

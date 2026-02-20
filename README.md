@@ -243,6 +243,80 @@ The `templates/` directory contains files scaffolded into user projects by `thep
 
 ---
 
+## Production Deployment
+
+Deploy your agent to a cloud VPS with HTTPS.
+
+### 1. Server prerequisites
+
+You need a VPS (any provider — Hetzner, DigitalOcean, AWS, etc.) with:
+
+- Docker + Docker Compose
+- Node.js 18+
+- Git
+- GitHub CLI (`gh`)
+
+Point a domain (e.g., `mybot.example.com`) to your server's IP address with a DNS A record.
+
+### 2. Scaffold and configure
+
+SSH into your server and scaffold the project:
+
+```bash
+mkdir my-agent && cd my-agent
+npx thepopebot@latest init
+npm run setup
+```
+
+When the setup wizard asks for `APP_URL`, enter your production URL with `https://` (e.g., `https://mybot.example.com`).
+
+Set the `RUNS_ON` GitHub variable so workflows use your server's self-hosted runner instead of GitHub-hosted runners:
+
+```bash
+gh variable set RUNS_ON --body "self-hosted" --repo OWNER/REPO
+```
+
+### 3. Enable HTTPS (Let's Encrypt)
+
+The `docker-compose.yml` has Let's Encrypt support built in but commented out. Three edits to enable it:
+
+**a) Add your email to `.env`:**
+
+```
+LETSENCRYPT_EMAIL=you@example.com
+```
+
+**b) Uncomment the TLS lines in the traefik service command:**
+
+```yaml
+- --entrypoints.web.http.redirections.entrypoint.to=websecure
+- --entrypoints.web.http.redirections.entrypoint.scheme=https
+- --certificatesresolvers.letsencrypt.acme.email=${LETSENCRYPT_EMAIL}
+- --certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json
+- --certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web
+```
+
+**c) Switch the event-handler labels from HTTP to HTTPS:**
+
+Comment out the HTTP entrypoint and uncomment the two HTTPS lines:
+
+```yaml
+# - traefik.http.routers.event-handler.entrypoints=web
+- traefik.http.routers.event-handler.entrypoints=websecure
+- traefik.http.routers.event-handler.tls.certresolver=letsencrypt
+```
+
+### 4. Build and launch
+
+```bash
+npm run build
+docker compose up -d
+```
+
+Ports 80 and 443 must be open on your server. Port 80 is required even with HTTPS — Let's Encrypt uses it for the ACME HTTP challenge to verify domain ownership.
+
+---
+
 ## Docs
 
 | Document | Description |

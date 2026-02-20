@@ -623,6 +623,12 @@ async function main() {
       LLM_PROVIDER: agentProvider,
       LLM_MODEL: agentModel,
     };
+    if (openaiBaseUrl) {
+      defaultVars.OPENAI_BASE_URL = openaiBaseUrl;
+    }
+    if (agentProvider === 'custom') {
+      defaultVars.RUNS_ON = 'self-hosted';
+    }
 
     let allVarsSet = false;
     while (!allVarsSet) {
@@ -833,6 +839,8 @@ async function main() {
     console.log('  \u2022 ALLOWED_PATHS = /logs');
     console.log(`  \u2022 LLM_PROVIDER = ${agentProvider}`);
     console.log(`  \u2022 LLM_MODEL = ${agentModel}`);
+    if (openaiBaseUrl) console.log(`  \u2022 OPENAI_BASE_URL = ${openaiBaseUrl}`);
+    if (agentProvider === 'custom') console.log('  \u2022 RUNS_ON = self-hosted');
   }
 
   console.log(chalk.bold.green('\n  You\'re all set!\n'));
