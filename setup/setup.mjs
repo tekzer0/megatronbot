@@ -161,7 +161,7 @@ async function main() {
     } catch {
       const commitSpinner = clack.spinner();
       commitSpinner.start('Creating initial commit...');
-      execSync('git commit -m "initial commit"', { stdio: 'ignore' });
+      execSync('git commit -m "initial commit [skip ci]"', { stdio: 'ignore' });
       commitSpinner.stop('Created initial commit');
     }
 
@@ -542,9 +542,7 @@ async function main() {
 
   const report = await syncConfig(env, collected, { owner, repo });
 
-  // Chat interfaces (informational)
   clack.log.info('Your agent includes a web chat interface at your APP_URL.');
-  clack.log.info('You can also connect Telegram: npm run setup-telegram');
 
   // ─── Step 6: Build & Start Server ────────────────────────────────────
   clack.log.step(`[${++currentStep}/${TOTAL_STEPS}] Build & Start Server`);
@@ -622,8 +620,9 @@ async function main() {
   }
 
   clack.outro(
-    `Chat with your agent at ${appUrl}\n` +
-    '  To connect Telegram: npm run setup-telegram'
+    `Start your server:\n\n` +
+    `  docker compose up -d\n\n` +
+    `Then chat with your agent at ${appUrl}`
   );
 }
 
