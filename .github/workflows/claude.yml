@@ -10,7 +10,6 @@ on:
 
 jobs:
   claude:
-    # Only the repository owner can trigger @claude
     if: |
       github.actor == github.repository_owner &&
       (
@@ -29,6 +28,35 @@ jobs:
         with:
           fetch-depth: 1
 
+      - name: Mirror fork PR branch to origin
+        id: fork-branch
+        if: |
+          (github.event_name == 'issue_comment' && github.event.issue.pull_request) ||
+          github.event_name == 'pull_request_review_comment'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request_review_comment" ]; then
+            PR_NUMBER=${{ github.event.pull_request.number }}
+          else
+            PR_NUMBER=${{ github.event.issue.number }}
+          fi
+
+          PR_DATA=$(gh pr view "$PR_NUMBER" --json headRefName,isCrossRepository)
+          IS_FORK=$(echo "$PR_DATA" | jq -r '.isCrossRepository')
+          HEAD_REF=$(echo "$PR_DATA" | jq -r '.headRefName')
+
+          if [ "$IS_FORK" = "true" ]; then
+            echo "Fork PR detected — mirroring $HEAD_REF to origin"
+            git fetch origin "refs/pull/${PR_NUMBER}/head:${HEAD_REF}"
+            git push origin "${HEAD_REF}"
+            echo "mirrored=true" >> "$GITHUB_OUTPUT"
+            echo "branch=${HEAD_REF}" >> "$GITHUB_OUTPUT"
+          else
+            echo "Same-repo PR, no action needed"
+            echo "mirrored=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - uses: anthropics/claude-code-action@v1
         env:
           ANTHROPIC_AUTH_TOKEN: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -39,3 +67,10 @@ jobs:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           claude_args: '--model ${{ vars.ANTHROPIC_MODEL }} --max-turns 30'
           display_report: 'false'
+
+      - name: Clean up mirrored fork branch
+        if: always() && steps.fork-branch.outputs.mirrored == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git push origin --delete "${{ steps.fork-branch.outputs.branch }}" || true
