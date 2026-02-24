@@ -1,10 +1,13 @@
 #!/usr/bin/env node
 
 import { execSync } from 'child_process';
+import fs from 'fs';
 import path from 'path';
 import chalk from 'chalk';
 import open from 'open';
 import * as clack from '@clack/prompts';
+
+import { createDirLink } from './lib/fs-utils.mjs';
 
 import {
   checkPrerequisites,
@@ -15,7 +18,6 @@ import {
   promptForProvider,
   promptForModel,
   promptForApiKey,
-  promptForOptionalKey,
   promptForCustomProvider,
   promptForBraveKey,
   confirm,
@@ -500,24 +502,19 @@ async function main() {
     }
   }
 
-  // Step 3b: Voice Messages (OpenAI optional)
-  if (collected['OPENAI_API_KEY']) {
-    clack.log.success('Your OpenAI key can also power voice messages.');
-  } else if (env?.OPENAI_API_KEY && await keepOrReconfigure('OpenAI key for voice', maskSecret(env.OPENAI_API_KEY))) {
-    collected['OPENAI_API_KEY'] = env.OPENAI_API_KEY;
-  } else if (!collected['OPENAI_API_KEY']) {
-    const result = await promptForOptionalKey('openai', 'voice messages');
-    if (result) {
-      collected['OPENAI_API_KEY'] = result;
-      clack.log.success(`OpenAI key added (${maskSecret(result)})`);
-    }
-  }
-
-  // Step 3c: Brave Search (optional — not in .env, always ask)
+  // Step 3b: Brave Search (optional — not in .env, always ask)
   const braveKey = await promptForBraveKey();
   if (braveKey) {
     collected.BRAVE_API_KEY = braveKey;
     clack.log.success(`Brave Search key added (${maskSecret(braveKey)})`);
+
+    // Enable brave-search skill symlink
+    const braveSymlink = path.join(process.cwd(), '.pi', 'skills', 'brave-search');
+    if (!fs.existsSync(braveSymlink)) {
+      fs.mkdirSync(path.dirname(braveSymlink), { recursive: true });
+      createDirLink('../../pi-skills/brave-search', braveSymlink);
+      clack.log.success('Enabled brave-search skill');
+    }
   }
 
   // ─── Step 4: App URL ─────────────────────────────────────────────────

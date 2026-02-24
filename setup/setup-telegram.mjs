@@ -3,9 +3,9 @@
 import * as clack from '@clack/prompts';
 
 import { checkPrerequisites } from './lib/prerequisites.mjs';
-import { setVariables } from './lib/github.mjs';
+import { setVariables, setSecrets } from './lib/github.mjs';
 import { setTelegramWebhook, validateBotToken, generateVerificationCode } from './lib/telegram.mjs';
-import { confirm, generateTelegramWebhookSecret } from './lib/prompts.mjs';
+import { confirm, generateTelegramWebhookSecret, promptForOptionalKey, maskSecret } from './lib/prompts.mjs';
 import { updateEnvVariable } from './lib/auth.mjs';
 import { runVerificationFlow } from './lib/telegram-verify.mjs';
 import { loadEnvFile } from './lib/env.mjs';
@@ -156,6 +156,22 @@ async function main() {
     } else {
       clack.log.warn('Chat ID is required — the bot will not respond without it.');
       clack.log.info('Run npm run setup-telegram again to complete setup.');
+    }
+  }
+
+  // Optional: OpenAI key for voice messages
+  const existingOpenAIKey = env?.OPENAI_API_KEY;
+  if (existingOpenAIKey) {
+    clack.log.success(`OpenAI key for voice: ${maskSecret(existingOpenAIKey)}`);
+  } else {
+    const openaiKey = await promptForOptionalKey('openai', 'voice messages');
+    if (openaiKey) {
+      updateEnvVariable('OPENAI_API_KEY', openaiKey);
+      const s2 = clack.spinner();
+      s2.start('Setting OpenAI secret on GitHub...');
+      await setSecrets(owner, repo, { AGENT_OPENAI_API_KEY: openaiKey });
+      s2.stop('OpenAI secret set');
+      clack.log.success(`OpenAI key added for voice (${maskSecret(openaiKey)})`);
     }
   }
 

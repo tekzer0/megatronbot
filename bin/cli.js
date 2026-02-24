@@ -4,6 +4,7 @@ import { execSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { createDirLink } from '../setup/lib/fs-utils.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -43,21 +44,6 @@ function templatePath(userPath, templatesDir) {
     return withSuffix;
   }
   return userPath;
-}
-
-function createDirLink(target, linkPath) {
-  if (process.platform !== 'win32') {
-    fs.symlinkSync(target, linkPath);
-    return;
-  }
-  // Junctions require absolute targets but don't require admin privileges
-  const absoluteTarget = path.resolve(path.dirname(linkPath), target);
-  try {
-    fs.symlinkSync(absoluteTarget, linkPath, 'junction');
-  } catch {
-    fs.cpSync(absoluteTarget, linkPath, { recursive: true });
-    console.log('    (copied — symlinks unavailable on this system)');
-  }
 }
 
 function printUsage() {
@@ -221,7 +207,7 @@ async function init() {
   }
 
   // Create default skill symlinks (brave-search, browser-tools)
-  const defaultSkills = ['brave-search', 'browser-tools'];
+  const defaultSkills = ['browser-tools'];
   for (const skill of defaultSkills) {
     const symlink = path.join(cwd, '.pi', 'skills', skill);
     if (!fs.existsSync(symlink)) {
