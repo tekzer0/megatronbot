@@ -187,8 +187,8 @@ The container executes tasks autonomously using the Pi coding agent.
 |----------|-------------|----------|
 | `REPO_URL` | Your repository URL | Yes |
 | `BRANCH` | Branch to work on (e.g., job/uuid) | Yes |
-| `SECRETS` | Base64-encoded JSON with protected credentials | Yes |
-| `LLM_SECRETS` | Base64-encoded JSON with LLM-accessible credentials | No |
+| `SECRETS` | Protected credentials collected from `AGENT_*` GitHub secrets by `run-job.yml` | Yes |
+| `LLM_SECRETS` | LLM-accessible credentials collected from `AGENT_LLM_*` GitHub secrets by `run-job.yml` | No |
 
 **Runtime Flow:**
 

@@ -107,7 +107,7 @@ Add custom skills for the agent in `.pi/skills/`. Skills extend the agent's capa
 
 ### How Secret Protection Works
 
-1. GitHub passes a single `SECRETS` env var (base64-encoded JSON with all credentials)
+1. The `run-job.yml` workflow collects individual `AGENT_*` GitHub secrets into a `SECRETS` env var
 2. The entrypoint decodes the JSON and exports each key as an env var
 3. Pi starts - SDKs read their env vars (ANTHROPIC_API_KEY, gh CLI uses GH_TOKEN)
 4. The `env-sanitizer` extension filters ALL secret keys from bash subprocess env
@@ -133,11 +133,12 @@ echo $MY_CUSTOM_KEY      # empty
 Sometimes you want the LLM to have access to certain credentials - browser logins, skill API keys, or service passwords. Use `LLM_SECRETS` for these.
 
 ```bash
-# Protected (filtered from LLM)
-SECRETS=$(echo -n '{"GH_TOKEN":"ghp_xxx","ANTHROPIC_API_KEY":"sk-ant-xxx"}' | base64)
+# Protected (filtered from LLM) — set via CLI:
+npx thepopebot set-agent-secret GH_TOKEN ghp_xxx
+npx thepopebot set-agent-secret ANTHROPIC_API_KEY sk-ant-xxx
 
-# Accessible to LLM (not filtered)
-LLM_SECRETS=$(echo -n '{"BROWSER_PASSWORD":"mypass123"}' | base64)
+# Accessible to LLM (not filtered) — set via CLI:
+npx thepopebot set-agent-llm-secret BROWSER_PASSWORD mypass123
 ```
 
 | Credential Type | Put In | Why |

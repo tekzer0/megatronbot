@@ -114,13 +114,26 @@ if [ -f "/job/.pi/agent/models.json" ]; then
     cp /job/.pi/agent/models.json /root/.pi/agent/models.json
 fi
 
+# Run Pi — capture exit code instead of letting set -e kill the script
+set +e
 pi $MODEL_FLAGS -p "$PROMPT" --session-dir "${LOG_DIR}"
+PI_EXIT=$?
 
-# 2. Commit changes + logs
-git add -A
-git add -f "${LOG_DIR}"
-git commit -m "thepopebot: job ${JOB_ID}" || true
+# 2. Commit based on outcome
+if [ $PI_EXIT -ne 0 ]; then
+    # Pi failed — only commit session logs, not partial code changes
+    git reset || true
+    git add -f "${LOG_DIR}"
+    git commit -m "thepopebot: job ${JOB_ID} (failed)" || true
+else
+    # Pi succeeded — commit everything
+    git add -A
+    git add -f "${LOG_DIR}"
+    git commit -m "thepopebot: job ${JOB_ID}" || true
+fi
+
 git push origin
+set -e
 
 # 3. Merge (pi has memory of job via session)
 #if [ -n "$REPO_URL" ] && [ -f "/job/MERGE_JOB.md" ]; then
@@ -135,4 +148,11 @@ gh pr create --title "thepopebot: job ${JOB_ID}" --body "Automated job" --base m
 if [ -n "$CHROME_PID" ]; then
     kill $CHROME_PID 2>/dev/null || true
 fi
+
+# Re-raise Pi's failure so the workflow reports it
+if [ $PI_EXIT -ne 0 ]; then
+    echo "Pi exited with code ${PI_EXIT}"
+    exit $PI_EXIT
+fi
+
 echo "Done. Job ID: ${JOB_ID}"

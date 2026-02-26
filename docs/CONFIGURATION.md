@@ -35,12 +35,17 @@ API keys for `/api` routes are database-backed and managed via the web UI Settin
 
 ## GitHub Secrets
 
-Set automatically by the setup wizard:
+Set via `npx thepopebot set-agent-secret` and `npx thepopebot set-agent-llm-secret`. Each value is stored exactly as provided.
+
+| Prefix | Purpose | Example |
+|--------|---------|---------|
+| `AGENT_` | Protected credentials (filtered from LLM's bash) | `AGENT_GH_TOKEN`, `AGENT_ANTHROPIC_API_KEY` |
+| `AGENT_LLM_` | LLM-accessible credentials (skills, browser logins) | `AGENT_LLM_BRAVE_API_KEY` |
+
+The `run-job.yml` workflow automatically collects these at runtime and passes them to the Docker container.
 
 | Secret | Description | Required |
 |--------|-------------|----------|
-| `SECRETS` | Base64-encoded JSON with protected credentials | Yes |
-| `LLM_SECRETS` | Base64-encoded JSON with LLM-accessible credentials | No |
 | `GH_WEBHOOK_SECRET` | Random secret for webhook authentication | Yes |
 
 ---

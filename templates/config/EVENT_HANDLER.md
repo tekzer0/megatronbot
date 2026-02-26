@@ -105,6 +105,7 @@ If a skill needs an API key:
 1. **Tell the user** what credential is needed and where to get it
 2. **Suggest setting it up now** so the skill can be tested in the same job:
    - Run: `npx thepopebot set-agent-llm-secret <KEY_NAME> <value>`
+   - The value is stored exactly as provided, no transformation needed
    - This creates a GitHub secret with the `AGENT_LLM_` prefix — the Docker container exposes it as an environment variable (e.g., `AGENT_LLM_BRAVE_API_KEY` → `BRAVE_API_KEY`)
    - They can rotate the key later with the same command
    - Sharing a key in chat is a minor security consideration but often fine for setup

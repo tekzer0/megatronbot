@@ -455,9 +455,33 @@ function loadRepoInfo() {
 }
 
 /**
- * Prompt for a secret value interactively if not provided as an argument
+ * Read all data from a piped stdin stream.
+ * Returns null if stdin is a TTY (interactive terminal).
+ */
+function readStdin() {
+  return new Promise((resolve, reject) => {
+    if (process.stdin.isTTY) return resolve(null);
+    let data = '';
+    process.stdin.setEncoding('utf-8');
+    process.stdin.on('data', (chunk) => { data += chunk; });
+    process.stdin.on('end', () => resolve(data.trimEnd() || null));
+    process.stdin.on('error', reject);
+  });
+}
+
+/**
+ * Prompt for a secret value interactively if not provided as an argument.
+ * Supports piped stdin (e.g. echo "val" | thepopebot set-var KEY).
  */
 async function promptForValue(key) {
+  const stdin = await readStdin();
+  if (stdin) return stdin;
+
+  if (!process.stdin.isTTY) {
+    console.error(`\n  No value provided for ${key}. Pipe a value or pass it as an argument.\n`);
+    process.exit(1);
+  }
+
   const { password, isCancel } = await import('@clack/prompts');
   const value = await password({
     message: `Enter value for ${key}:`,
