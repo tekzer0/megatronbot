@@ -1,0 +1,1 @@
+Use the Home Assistant skill to call the light.turn_off service for the hallway lights. First check available light entities to identify the correct hallway light entity_id, then turn it off.
