@@ -764,25 +764,21 @@ async function main() {
 
   if (serverRunning) {
     if (await confirm('Server is already running. Restart?')) {
-      const restartSpinner = clack.spinner();
-      restartSpinner.start('Restarting server...');
+      clack.log.info('Restarting server...');
       try {
-        execSync('docker compose down && docker compose up -d', { stdio: 'ignore' });
-        restartSpinner.stop('Server restarted');
+        execSync('docker compose down && docker compose up -d', { stdio: 'inherit' });
+        clack.log.success('Server restarted');
       } catch {
-        restartSpinner.stop('Failed to restart server');
-        clack.log.warn('Run manually: docker compose down && docker compose up -d');
+        clack.log.warn('Failed to restart. Run manually: docker compose down && docker compose up -d');
       }
     }
   } else {
-    const startSpinner = clack.spinner();
-    startSpinner.start('Starting server...');
+    clack.log.info('Starting server...');
     try {
-      execSync('docker compose up -d', { stdio: 'ignore' });
-      startSpinner.stop('Server started');
+      execSync('docker compose up -d', { stdio: 'inherit' });
+      clack.log.success('Server started');
     } catch {
-      startSpinner.stop('Failed to start server');
-      clack.log.warn('Run manually: docker compose up -d');
+      clack.log.warn('Failed to start. Run manually: docker compose up -d');
     }
   }
 

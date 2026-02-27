@@ -76,13 +76,12 @@ export async function promptForProvider() {
  */
 export async function promptForModel(providerKey, { defaultModelId } = {}) {
   const provider = PROVIDERS[providerKey];
-  const options = provider.models.map((m) => {
-    const isRecommended = defaultModelId ? m.id === defaultModelId : m.default;
-    return {
-      label: isRecommended ? `${m.name} (recommended)` : m.name,
-      value: m.id,
-    };
-  });
+  const isRecommended = (m) => defaultModelId ? m.id === defaultModelId : m.default;
+  const sorted = [...provider.models].sort((a, b) => isRecommended(b) - isRecommended(a));
+  const options = sorted.map((m) => ({
+    label: isRecommended(m) ? `${m.name} (recommended)` : m.name,
+    value: m.id,
+  }));
   options.push({ label: 'Custom (enter model ID)', value: '__custom__' });
 
   const model = handleCancel(await clack.select({

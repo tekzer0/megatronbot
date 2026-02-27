@@ -24,16 +24,14 @@ export function ChatHeader({ chatId }) {
   }, [fetchTitle]);
 
   return (
-    <header className="sticky top-0 flex items-center gap-2 border-b border-border bg-background px-4 py-3 z-10">
+    <header className="sticky top-0 flex items-center gap-2 bg-background px-2 py-1.5 md:px-2 z-10">
       {/* Mobile-only: open sidebar sheet */}
       <div className="md:hidden">
         <SidebarTrigger />
       </div>
-      {title && (
-        <h1 className="text-base font-medium text-muted-foreground">
-          {title}
-        </h1>
-      )}
+      <h1 className="text-base font-medium text-muted-foreground truncate">
+        {title || '\u00A0'}
+      </h1>
     </header>
   );
 }
