@@ -57,6 +57,8 @@ HA_URL              = os.environ.get('HA_URL', 'http://192.168.1.210:8123')
 HA_TOKEN            = os.environ.get('HA_ACCESS_TOKEN', '')
 
 WAKE_WORD           = 'megatron'
+# Whisper tiny sometimes transcribes it differently — catch all variants
+WAKE_ALIASES        = ['megatron', 'mega tron', 'mega-tron', 'megaton', 'meg a tron']
 WHISPER_WAKE_SIZE   = 'tiny'    # fast, just needs to catch one word
 WHISPER_STT_SIZE    = 'base'    # better accuracy for actual commands
 
@@ -218,8 +220,11 @@ class MegatronClient:
         Otherwise play a beep and record the next utterance.
         """
         print(f'\nListening for "{WAKE_WORD}"...\n')
+        # Rolling buffer: keep 3s of audio, check every 2s (overlap catches words at chunk edges)
         wake_buffer = []
-        chunks_needed = int(WAKE_CHUNK_SECONDS * SAMPLE_RATE / CHUNK_SIZE)
+        chunk_step   = int(WAKE_CHUNK_SECONDS * SAMPLE_RATE / CHUNK_SIZE)   # chunks per 2s
+        chunk_window = int(3 * SAMPLE_RATE / CHUNK_SIZE)                    # keep 3s total
+        chunks_since_check = 0
         io_errors = 0
 
         try:
@@ -239,26 +244,48 @@ class MegatronClient:
                     continue
 
                 wake_buffer.append(data)
+                if len(wake_buffer) > chunk_window:
+                    wake_buffer = wake_buffer[-chunk_window:]   # keep only last 3s
 
-                if len(wake_buffer) >= chunks_needed:
-                    audio_float = self.audio_chunks_to_float(wake_buffer)
-                    wake_buffer = []
+                chunks_since_check += 1
+                if chunks_since_check < chunk_step:
+                    continue
+                chunks_since_check = 0
 
-                    text = self.transcribe_with_model(
-                        self.whisper_wake, audio_float,
-                        prompt='Voice commands. Wake word is Megatron.'
-                    )
+                audio_float = self.audio_chunks_to_float(wake_buffer)
 
-                    if WAKE_WORD in text.lower():
-                        print(f'\n🎤 "{WAKE_WORD}" detected! [{datetime.now().strftime("%H:%M:%S")}]')
+                text = self.transcribe_with_model(
+                    self.whisper_wake, audio_float,
+                    prompt='Megatron'
+                )
 
-                        # Check if command was spoken in the same breath as wake word
-                        after_wake = text.lower().split(WAKE_WORD, 1)[-1].strip(' .,!?')
-                        if len(after_wake) > 3:
-                            print(f'  (inline command: "{after_wake}")')
-                            self.process_transcription(after_wake)
-                        else:
-                            self.record_and_respond()
+                # Filter out common Whisper hallucinations on silence/background noise
+                tclean = text.strip().lower().rstrip('.')
+                HALLUCINATIONS = {
+                    '', 'megatron', 'thank you', 'thanks', 'music playing',
+                    'music', '...', '.. ..', 'you', 'the', 'bye', 'bye bye',
+                    'please subscribe', 'subscribe', 'subtitles by',
+                }
+                is_hallucination = tclean in HALLUCINATIONS or tclean.startswith('♪')
+                if tclean and not is_hallucination:
+                    print(f'  heard: "{text.strip()}"')
+
+                tl = text.lower()
+                if not is_hallucination and any(alias in tl for alias in WAKE_ALIASES):
+                    print(f'\n🎤 "{WAKE_WORD}" detected! [{datetime.now().strftime("%H:%M:%S")}]')
+                    wake_buffer = []   # reset buffer after detection
+
+                    # Check if command was spoken in the same breath as wake word
+                    after_wake = tl
+                    for alias in WAKE_ALIASES:
+                        if alias in tl:
+                            after_wake = tl.split(alias, 1)[-1].strip(' .,!?')
+                            break
+                    if len(after_wake) > 3:
+                        print(f'  (inline command: "{after_wake}")')
+                        self.process_transcription(after_wake)
+                    else:
+                        self.record_and_respond()
 
                         print(f'Listening for "{WAKE_WORD}"...\n')
 
