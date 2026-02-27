@@ -235,7 +235,7 @@ SQLite via Drizzle ORM at `data/thepopebot.sqlite`. Auto-initialized and auto-mi
 | `run-job.yml` | `job/*` branch created | Runs the Docker agent container |
 | `rebuild-event-handler.yml` | Push to `main` | Rebuilds server (fast path or Docker restart) |
 | `upgrade-event-handler.yml` | Manual `workflow_dispatch` | Creates PR to upgrade thepopebot package |
-| `build-image.yml` | `docker/job/**` changes | Builds job Docker image to GHCR |
+| `build-image.yml` | `docker/job-pi-coding-agent/**` changes | Builds Pi coding agent Docker image to GHCR |
 | `auto-merge.yml` | Job PR opened | Squash-merges if changes are within `ALLOWED_PATHS` |
 | `notify-pr-complete.yml` | After `auto-merge.yml` | Sends job completion notification |
 | `notify-job-failed.yml` | `run-job.yml` fails | Sends failure notification |

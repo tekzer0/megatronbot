@@ -12,6 +12,7 @@ export const PROVIDERS = {
     keyPrefix: 'sk-ant-',
     keyPage: 'https://platform.claude.com/settings/keys',
     builtin: true,
+    oauthSupported: true,
     models: [
       { id: 'claude-sonnet-4-5-20250929', name: 'Claude Sonnet 4.5', default: true },
       { id: 'claude-opus-4-20250514', name: 'Claude Opus 4' },

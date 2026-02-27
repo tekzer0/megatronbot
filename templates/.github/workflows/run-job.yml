@@ -36,6 +36,7 @@ jobs:
           if [ -f "$CONFIG_FILE" ]; then
             echo "llm_provider=$(jq -r '.llm_provider // empty' "$CONFIG_FILE")" >> $GITHUB_OUTPUT
             echo "llm_model=$(jq -r '.llm_model // empty' "$CONFIG_FILE")" >> $GITHUB_OUTPUT
+            echo "agent_backend=$(jq -r '.agent_backend // empty' "$CONFIG_FILE")" >> $GITHUB_OUTPUT
           fi
 
       - name: Login to GHCR
@@ -54,9 +55,13 @@ jobs:
           LLM_MODEL: ${{ steps.job-config.outputs.llm_model || vars.LLM_MODEL }}
           LLM_PROVIDER: ${{ steps.job-config.outputs.llm_provider || vars.LLM_PROVIDER }}
           OPENAI_BASE_URL: ${{ vars.OPENAI_BASE_URL }}
+          AGENT_BACKEND: ${{ steps.job-config.outputs.agent_backend || vars.AGENT_BACKEND || '' }}
         run: |
+          AGENT_BACKEND="${AGENT_BACKEND:-pi}"
           if [ -n "$JOB_IMAGE_URL" ]; then
             IMAGE="${JOB_IMAGE_URL}:latest"
+          elif [ "$AGENT_BACKEND" = "claude-code" ]; then
+            IMAGE="stephengpope/thepopebot:job-claude-code-${THEPOPEBOT_VERSION}"
           else
             IMAGE="stephengpope/thepopebot:job-${THEPOPEBOT_VERSION}"
           fi
@@ -80,4 +85,5 @@ jobs:
             -e LLM_MODEL="${LLM_MODEL}" \
             -e LLM_PROVIDER="${LLM_PROVIDER}" \
             -e OPENAI_BASE_URL="${OPENAI_BASE_URL}" \
+            -e AGENT_BACKEND="${AGENT_BACKEND}" \
             "$IMAGE"

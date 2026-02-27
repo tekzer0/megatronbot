@@ -24,6 +24,9 @@ export const CONFIG_TARGETS = {
   CUSTOM_API_KEY:        { env: true, secret: 'AGENT_CUSTOM_API_KEY' },
   OPENAI_BASE_URL:       { env: true, variable: true },
 
+  CLAUDE_CODE_OAUTH_TOKEN: { env: true, secret: 'AGENT_CLAUDE_CODE_OAUTH_TOKEN' },
+  AGENT_BACKEND:           { env: true, variable: true },
+
   BRAVE_API_KEY:         { secret: 'AGENT_LLM_BRAVE_API_KEY' },
 
   GH_WEBHOOK_SECRET:     { env: true, secret: true },

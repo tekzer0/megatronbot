@@ -165,7 +165,7 @@ When you ran `thepopebot init` the first time, it scaffolded a project folder wi
 | `config/SOUL.md`, `EVENT_HANDLER.md`, `AGENT.md`, etc. | Your agent's personality, behavior, and prompts |
 | `config/CRONS.json`, `TRIGGERS.json` | Your scheduled jobs and webhook triggers |
 | `app/` | Next.js pages and UI components |
-| `docker/job/` | The Dockerfile for your agent's job container |
+| `docker/job-pi-coding-agent/` | The Dockerfile for the Pi coding agent job container |
 
 **Managed files** — These are infrastructure files that need to stay in sync with the package version. `init` auto-updates them for you:
 
@@ -288,6 +288,7 @@ See [docs/RUNNING_DIFFERENT_MODELS.md](docs/RUNNING_DIFFERENT_MODELS.md) for the
 | [Running Different Models](docs/RUNNING_DIFFERENT_MODELS.md) | Event Handler vs job model config, per-job overrides, providers, custom provider |
 | [Auto-Merge](docs/AUTO_MERGE.md) | Auto-merge controls, ALLOWED_PATHS configuration |
 | [Deployment](docs/DEPLOYMENT.md) | VPS setup, Docker Compose, HTTPS with Let's Encrypt |
+| [Claude Code vs Pi](docs/CLAUDE_CODE_VS_PI.md) | Comparing the two agent backends (subscription vs API credits) |
 | [How to Use Pi](docs/HOW_TO_USE_PI.md) | Guide to the Pi coding agent |
 | [Pre-Release](docs/PRE_RELEASE.md) | Installing beta/alpha builds |
 | [Security](docs/SECURITY.md) | Security disclaimer, local development risks |

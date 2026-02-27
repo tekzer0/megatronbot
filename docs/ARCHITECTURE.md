@@ -71,8 +71,11 @@ This is the user project structure after running `npx thepopebot init`:
 │   ├── api/[...thepopebot]/       # Catch-all API route
 │   └── stream/chat/               # Chat streaming route
 ├── docker/
-│   ├── job/
-│   │   ├── Dockerfile             # Job agent container (customizable)
+│   ├── job-pi-coding-agent/
+│   │   ├── Dockerfile             # Pi coding agent container (customizable)
+│   │   └── entrypoint.sh          # Container startup script
+│   ├── job-claude-code/
+│   │   ├── Dockerfile             # Claude Code CLI container
 │   │   └── entrypoint.sh          # Container startup script
 │   └── event-handler/
 │       └── Dockerfile             # Event handler container
@@ -153,7 +156,7 @@ curl -X POST https://your-app-url/api/telegram/register \
 
 | Workflow | Trigger | Purpose |
 |----------|---------|---------|
-| `build-image.yml` | Push to `main` (when `docker/job/**` changes) | Builds Docker image, pushes to GHCR |
+| `build-image.yml` | Push to `main` (when `docker/job-pi-coding-agent/**` changes) | Builds Docker image, pushes to GHCR |
 | `run-job.yml` | `job/*` branch created | Runs Docker agent container |
 | `auto-merge.yml` | PR opened from `job/*` branch | Checks `AUTO_MERGE` + `ALLOWED_PATHS`, merges if allowed |
 | `rebuild-event-handler.yml` | Push to `main` | Rebuilds Next.js inside the event handler container |

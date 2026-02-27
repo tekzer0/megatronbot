@@ -471,7 +471,87 @@ async function main() {
     }
   }
 
-  // Step 3b: Brave Search (optional — not in .env, always ask)
+  // Step 3b: Claude OAuth token (when Anthropic selected)
+  const providerConfig = agentProvider !== 'custom' ? PROVIDERS[agentProvider] : null;
+  if (providerConfig?.oauthSupported) {
+    // Check for existing OAuth config
+    let skipOAuth = false;
+    if (env?.CLAUDE_CODE_OAUTH_TOKEN) {
+      skipOAuth = await keepOrReconfigure(
+        'Claude OAuth Token',
+        `${maskSecret(env.CLAUDE_CODE_OAUTH_TOKEN)} (agent backend: ${env.AGENT_BACKEND || 'claude-code'})`
+      );
+      if (skipOAuth) {
+        collected.CLAUDE_CODE_OAUTH_TOKEN = env.CLAUDE_CODE_OAUTH_TOKEN;
+        collected.AGENT_BACKEND = env.AGENT_BACKEND || 'claude-code';
+      }
+    }
+
+    if (!skipOAuth) {
+      const hasSub = await confirm('Do you have a Claude Pro or Max subscription?', false);
+
+      if (hasSub) {
+        clack.log.info(
+          'You can use your subscription for agent jobs instead of API credits.\n' +
+          '  This switches your job runner from Pi to Claude Code CLI.\n' +
+          '  See docs/CLAUDE_CODE_VS_PI.md for details.\n\n' +
+          '  The API key above is still required — Anthropic only allows OAuth\n' +
+          '  tokens with Claude Code, not the Messages API.\n' +
+          '  Details: https://code.claude.com/docs/en/legal-and-compliance'
+        );
+
+        // Check if claude CLI is installed
+        let claudeInstalled = false;
+        try {
+          execSync('command -v claude', { stdio: 'ignore' });
+          claudeInstalled = true;
+        } catch {}
+
+        if (claudeInstalled) {
+          clack.log.info(
+            'Generate your token by running this in another terminal:\n\n' +
+            '    claude setup-token\n\n' +
+            '  This opens your browser to authenticate with your Claude account.\n' +
+            '  After auth, a 1-year token is printed to your terminal.'
+          );
+        } else {
+          clack.log.info(
+            'First, install the Claude Code CLI:\n\n' +
+            '    npm install -g @anthropic-ai/claude-code\n\n' +
+            '  Then run:\n\n' +
+            '    claude setup-token\n\n' +
+            '  This opens your browser to authenticate with your Claude account.\n' +
+            '  After auth, a 1-year token is printed to your terminal.'
+          );
+        }
+
+        let oauthToken = null;
+        while (!oauthToken) {
+          const tokenInput = await clack.text({
+            message: 'Paste your token here (starts with sk-ant-oat01-):',
+            validate: (input) => {
+              if (!input) return 'Token is required (or press Ctrl+C to skip)';
+              if (!input.startsWith('sk-ant-oat01-')) return 'Token must start with sk-ant-oat01-';
+            },
+          });
+          if (clack.isCancel(tokenInput)) {
+            clack.log.info('Skipped OAuth — agent jobs will use Pi with API credits.');
+            break;
+          }
+          oauthToken = tokenInput.trim();
+        }
+
+        if (oauthToken) {
+          collected.CLAUDE_CODE_OAUTH_TOKEN = oauthToken;
+          collected.AGENT_BACKEND = 'claude-code';
+          clack.log.success(`Claude OAuth token added (${maskSecret(oauthToken)})`);
+          clack.log.info('Agent jobs will use Claude Code CLI with your subscription.');
+        }
+      }
+    }
+  }
+
+  // Step 3c: Brave Search (optional — not in .env, always ask)
   const braveKey = await promptForBraveKey();
   if (braveKey) {
     collected.BRAVE_API_KEY = braveKey;
@@ -641,6 +721,9 @@ async function main() {
   summary += `Repository:   ${owner}/${repo}\n`;
   summary += `App URL:      ${appUrl}\n`;
   summary += `Agent LLM:    ${providerLabel} (${agentModel})\n`;
+  if (collected.AGENT_BACKEND) {
+    summary += `Agent Runner: ${collected.AGENT_BACKEND === 'claude-code' ? 'Claude Code CLI (subscription)' : 'Pi Coding Agent (API credits)'}\n`;
+  }
   summary += `GitHub PAT:   ${maskSecret(pat)}`;
 
   clack.note(summary, 'Configuration');
