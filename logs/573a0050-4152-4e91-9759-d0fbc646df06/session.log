@@ -1,0 +1,157 @@
+Warning: Input is not a terminal (fd=0).
+────────────────────────────────────────────────────────────────────────────────
+Warning for groq/moonshotai/kimi-k2-instruct: Unknown context window size and 
+costs, using sane defaults.
+Did you mean one of these?
+- groq/moonshotai/kimi-k2-instruct-0905
+You can skip this check with --no-show-model-warnings
+
+https://aider.chat/docs/llms/warnings.html
+
+Aider v0.86.2
+Model: groq/moonshotai/kimi-k2-instruct with whole edit format
+Git repo: .git with 294 files
+Repo-map: using 1024 tokens, auto refresh
+Added CLAUDE.md to the chat (read-only).
+
+
+https://aider.chat/HISTORY.html#release-notes
+
+Initial repo scan can be slow in larger repos, but only happens once.
+Scanning repo:   0%|          | 0/294 [00:00<?, ?it/s]Scanning repo:   9%|▉         | 26/294 [00:00<00:02, 130.44it/s]Scanning repo:  17%|█▋        | 50/294 [00:00<00:01, 172.36it/s]Scanning repo:  23%|██▎       | 69/294 [00:00<00:02, 104.23it/s]Scanning repo:  28%|██▊       | 83/294 [00:00<00:02, 86.92it/s] Scanning repo:  32%|███▏      | 94/294 [00:00<00:02, 82.04it/s]Scanning repo:  35%|███▌      | 104/294 [00:01<00:02, 67.17it/s]Scanning repo:  63%|██████▎   | 185/294 [00:01<00:00, 207.24it/s]Scanning repo:  74%|███████▍  | 217/294 [00:01<00:00, 177.30it/s]Scanning repo:  83%|████████▎ | 243/294 [00:01<00:00, 121.19it/s]Scanning repo:  93%|█████████▎| 274/294 [00:02<00:00, 147.39it/s]Scanning repo: 100%|██████████| 294/294 [00:02<00:00, 131.44it/s]
+I'll create the requested skill files. These are new files, so here's the       
+complete content for each:                                                      
+
+pi-skills/telegram-voice/SKILL.md                                               
+
+                                                                                
+---                                                                             
+                                                                                
+name: telegram-voice                                                            
+                                                                                
+description: Send voice messages to Telegram using ElevenLabs TTS               
+                                                                                
+baseDir: speak.sh                                                               
+                                                                                
+usage: speak.sh "text to speak"                                                 
+                                                                                
+env:                                                                            
+                                                                                
+  - ELEVENLABS_API_KEY                                                          
+                                                                                
+  - ELEVENLABS_VOICE_ID                                                         
+                                                                                
+  - TELEGRAM_BOT_TOKEN                                                          
+                                                                                
+  - TELEGRAM_CHAT_ID                                                            
+                                                                                
+---                                                                             
+                                                                                
+
+pi-skills/telegram-voice/speak.sh                                               
+
+                                                                                
+#!/bin/bash                                                                     
+                                                                                
+set -euo pipefail                                                               
+                                                                                
+                                                                                
+                                                                                
+if [ $# -lt 1 ]; then                                                           
+                                                                                
+  echo "Usage: $0 \"text to speak\""                                            
+                                                                                
+  exit 1                                                                        
+                                                                                
+fi                                                                              
+                                                                                
+                                                                                
+                                                                                
+TEXT="$1"                                                                       
+                                                                                
+                                                                                
+                                                                                
+if [ -z "${ELEVENLABS_API_KEY:-}" ]; then                                       
+                                                                                
+  echo "Error: ELEVENLABS_API_KEY is required"                                  
+                                                                                
+  exit 1                                                                        
+                                                                                
+fi                                                                              
+                                                                                
+                                                                                
+                                                                                
+if [ -z "${ELEVENLABS_VOICE_ID:-}" ]; then                                      
+                                                                                
+  echo "Error: ELEVENLABS_VOICE_ID is required"                                 
+                                                                                
+  exit 1                                                                        
+                                                                                
+fi                                                                              
+                                                                                
+                                                                                
+                                                                                
+if [ -z "${TELEGRAM_BOT_TOKEN:-}" ]; then                                       
+                                                                                
+  echo "Error: TELEGRAM_BOT_TOKEN is required"                                  
+                                                                                
+  exit 1                                                                        
+                                                                                
+fi                                                                              
+                                                                                
+                                                                                
+                                                                                
+if [ -z "${TELEGRAM_CHAT_ID:-}" ]; then                                         
+                                                                                
+  echo "Error: TELEGRAM_CHAT_ID is required"                                    
+                                                                                
+  exit 1                                                                        
+                                                                                
+fi                                                                              
+                                                                                
+                                                                                
+                                                                                
+TMP_DIR=$(mktemp -d)                                                            
+                                                                                
+trap 'rm -rf "$TMP_DIR"' EXIT                                                   
+                                                                                
+                                                                                
+                                                                                
+MP3_FILE="$TMP_DIR/voice.mp3"                                                   
+                                                                                
+                                                                                
+                                                                                
+curl -s -X POST \                                                               
+                                                                                
+  "https://api.elevenlabs.io/v1/text-to-speech/$ELEVENLABS_VOICE_ID" \          
+                                                                                
+  -H "xi-api-key: $ELEVENLABS_API_KEY" \                                        
+                                                                                
+  -H "Content-Type: application/json" \                                         
+                                                                                
+  -d "{\"text\":\"$TEXT\",\"model_id\":\"eleven_monolingual_v1\"}" \            
+                                                                                
+  --output "$MP3_FILE"                                                          
+                                                                                
+                                                                                
+                                                                                
+curl -s -X POST \                                                               
+                                                                                
+  "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendVoice" \                 
+                                                                                
+  -F "chat_id=$TELEGRAM_CHAT_ID" \                                              
+                                                                                
+  -F "voice=@$MP3_FILE"                                                         
+                                                                                
+                                                                                
+                                                                                
+echo "Voice message sent to Telegram"                                           
+                                                                                
+
+Tokens: 1.9k sent, 501 received.
+
+pi-skills/telegram-voice/SKILL.md
+
+pi-skills/telegram-voice/speak.sh
+Applied edit to pi-skills/telegram-voice/SKILL.md
+Applied edit to pi-skills/telegram-voice/speak.sh
