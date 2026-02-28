@@ -31,8 +31,10 @@ import {
   checkPATScopes,
   generateWebhookSecret,
   getPATCreationURL,
+  setSecret,
+  setVariable,
 } from './lib/github.mjs';
-import { writeModelsJson } from './lib/auth.mjs';
+import { writeModelsJson, updateEnvVariable } from './lib/auth.mjs';
 import { loadEnvFile } from './lib/env.mjs';
 import { syncConfig } from './lib/sync.mjs';
 
@@ -49,7 +51,7 @@ async function main() {
   console.log(chalk.cyan(logo));
   clack.intro('Interactive Setup Wizard');
 
-  const TOTAL_STEPS = 7;
+  const TOTAL_STEPS = 8;
   let currentStep = 0;
 
   // Load existing .env (always exists after init — seed .env has AUTH_SECRET etc.)
@@ -350,10 +352,14 @@ async function main() {
   clack.log.step(`[${++currentStep}/${TOTAL_STEPS}] API Keys`);
   clack.log.info('Your agent uses a large language model (LLM) to think and write code. You\'ll choose a provider and enter an API key from them.');
 
-  // Step 3a: Agent LLM
+  // Step 3a: Chat LLM (event handler)
+  let chatProvider = null;
+  let chatModel = null;
+  let openaiBaseUrl = null;
+
+  // Agent LLM overrides (only set when user chooses different agent config)
   let agentProvider = null;
   let agentModel = null;
-  let openaiBaseUrl = null;
 
   // Build display string for existing LLM config
   let llmDisplay = null;
@@ -378,13 +384,13 @@ async function main() {
 
   if (llmDisplay && await keepOrReconfigure('LLM', llmDisplay)) {
     // Keep existing LLM config
-    agentProvider = env.LLM_PROVIDER;
-    agentModel = env.LLM_MODEL;
-    const existingEnvKey = agentProvider === 'custom'
+    chatProvider = env.LLM_PROVIDER;
+    chatModel = env.LLM_MODEL;
+    const existingEnvKey = chatProvider === 'custom'
       ? 'CUSTOM_API_KEY'
-      : PROVIDERS[agentProvider].envKey;
-    collected.LLM_PROVIDER = agentProvider;
-    collected.LLM_MODEL = agentModel;
+      : PROVIDERS[chatProvider].envKey;
+    collected.LLM_PROVIDER = chatProvider;
+    collected.LLM_MODEL = chatModel;
     collected[existingEnvKey] = env[existingEnvKey] || '';
     if (env.OPENAI_BASE_URL) {
       openaiBaseUrl = env.OPENAI_BASE_URL;
@@ -392,16 +398,16 @@ async function main() {
     }
   } else {
     // Prompt for new LLM config
-    clack.log.info('Choose the LLM provider for your agent.');
+    clack.log.info('Choose the LLM provider for your bot.');
 
-    agentProvider = await promptForProvider();
+    chatProvider = await promptForProvider();
 
-    if (agentProvider === 'custom') {
+    if (chatProvider === 'custom') {
       clack.log.info('If the model runs on this machine, use http://host.docker.internal:<port>/v1');
       clack.log.info('instead of localhost (localhost won\'t work from inside Docker)');
       clack.log.info('Ollama example: http://host.docker.internal:11434/v1');
       const custom = await promptForCustomProvider();
-      agentModel = custom.model;
+      chatModel = custom.model;
       openaiBaseUrl = custom.baseUrl;
       writeModelsJson('custom', {
         baseUrl: custom.baseUrl,
@@ -416,14 +422,14 @@ async function main() {
         clack.log.success(`API key added (${maskSecret(custom.apiKey)})`);
       }
     } else {
-      const providerConfig = PROVIDERS[agentProvider];
-      agentModel = await promptForModel(agentProvider);
-      const agentApiKey = await promptForApiKey(agentProvider);
-      collected[providerConfig.envKey] = agentApiKey;
+      const providerConfig = PROVIDERS[chatProvider];
+      chatModel = await promptForModel(chatProvider, { defaultModelId: 'claude-sonnet-4-6' });
+      const chatApiKey = await promptForApiKey(chatProvider);
+      collected[providerConfig.envKey] = chatApiKey;
 
       // Non-builtin providers need models.json
       if (!providerConfig.builtin) {
-        writeModelsJson(agentProvider, {
+        writeModelsJson(chatProvider, {
           baseUrl: providerConfig.baseUrl,
           apiKey: providerConfig.envKey,
           api: providerConfig.api,
@@ -432,19 +438,19 @@ async function main() {
         clack.log.success(`Generated .pi/agent/models.json for ${providerConfig.name}`);
       }
 
-      clack.log.success(`${providerConfig.name} key added (${maskSecret(agentApiKey)})`);
+      clack.log.success(`${providerConfig.name} key added (${maskSecret(chatApiKey)})`);
     }
 
-    collected.LLM_PROVIDER = agentProvider;
-    collected.LLM_MODEL = agentModel;
+    collected.LLM_PROVIDER = chatProvider;
+    collected.LLM_MODEL = chatModel;
 
-    if (agentProvider === 'custom') {
+    if (chatProvider === 'custom') {
       collected.RUNS_ON = 'self-hosted';
     }
   }
 
   // Re-run: reconfigure existing OPENAI_BASE_URL if provider was kept
-  if ((agentProvider === 'openai' || agentProvider === 'custom') && env?.OPENAI_BASE_URL && !collected.OPENAI_BASE_URL) {
+  if ((chatProvider === 'openai' || chatProvider === 'custom') && env?.OPENAI_BASE_URL && !collected.OPENAI_BASE_URL) {
     if (!await keepOrReconfigure('Custom LLM URL', env.OPENAI_BASE_URL)) {
       clack.log.info('If the model runs on this machine, use http://host.docker.internal:<port>/v1');
       clack.log.info('instead of localhost (localhost won\'t work from inside Docker)');
@@ -471,22 +477,150 @@ async function main() {
     }
   }
 
-  // Step 3b: Brave Search (optional — not in .env, always ask)
+  // Step 3b: Separate agent LLM settings
+  const useDifferentAgent = await confirm(
+    'Would you like agent jobs to use different LLM settings?\n  (Required if you want to use a Claude Pro/Max subscription for agent jobs)',
+    false
+  );
+
+  if (useDifferentAgent) {
+    clack.log.info('Choose the LLM provider for agent jobs.');
+
+    agentProvider = await promptForProvider();
+
+    if (agentProvider === 'custom') {
+      // Custom/local agent — prompt for model ID directly
+      const customModel = await clack.text({
+        message: 'Enter agent model ID (e.g., qwen3:8b):',
+        validate: (input) => { if (!input) return 'Model ID is required'; },
+      });
+      if (clack.isCancel(customModel)) { clack.cancel('Setup cancelled.'); process.exit(0); }
+      agentModel = customModel;
+      collected.RUNS_ON = 'self-hosted';
+    } else {
+      const agentProviderConfig = PROVIDERS[agentProvider];
+      agentModel = await promptForModel(agentProvider);
+
+      // Collect agent API key if different provider than chat
+      if (agentProvider !== chatProvider) {
+        const agentApiKey = await promptForApiKey(agentProvider);
+        // Set agent API key as a GitHub secret directly — not added to collected
+        // to avoid polluting .env with a key the event handler doesn't use
+        collected['__agentApiKey'] = { provider: agentProvider, key: agentApiKey, secretName: `AGENT_${agentProviderConfig.envKey}` };
+        clack.log.success(`Agent ${agentProviderConfig.name} key added (${maskSecret(agentApiKey)})`);
+      }
+
+      // OAuth prompt — only when agent provider is Anthropic
+      if (agentProviderConfig.oauthSupported) {
+        let skipOAuth = false;
+        if (env?.CLAUDE_CODE_OAUTH_TOKEN) {
+          skipOAuth = await keepOrReconfigure(
+            'Claude OAuth Token',
+            `${maskSecret(env.CLAUDE_CODE_OAUTH_TOKEN)} (agent backend: ${env.AGENT_BACKEND || 'claude-code'})`
+          );
+          if (skipOAuth) {
+            collected.CLAUDE_CODE_OAUTH_TOKEN = env.CLAUDE_CODE_OAUTH_TOKEN;
+            collected.AGENT_BACKEND = env.AGENT_BACKEND || 'claude-code';
+
+            // OAuth replaces the API key for agent jobs — don't push it to GitHub.
+            if (collected.ANTHROPIC_API_KEY) {
+              updateEnvVariable('ANTHROPIC_API_KEY', collected.ANTHROPIC_API_KEY);
+              delete collected.ANTHROPIC_API_KEY;
+            }
+            delete collected['__agentApiKey'];
+          }
+        }
+
+        if (!skipOAuth) {
+          const hasSub = await confirm('Do you have a Claude Pro or Max subscription?', false);
+
+          if (hasSub) {
+            clack.log.info(
+              'You can use your subscription for agent jobs instead of API credits.\n' +
+              '  This switches your job runner from Pi to Claude Code CLI.\n' +
+              '  See docs/CLAUDE_CODE_VS_PI.md for details.\n\n' +
+              '  Your API key will only be saved locally for chat — it won\'t be\n' +
+              '  pushed to GitHub since agent jobs will use the OAuth token instead.'
+            );
+
+            // Check if claude CLI is installed
+            let claudeInstalled = false;
+            try {
+              execSync('command -v claude', { stdio: 'ignore' });
+              claudeInstalled = true;
+            } catch {}
+
+            if (claudeInstalled) {
+              clack.log.info(
+                'Generate your token by running this in another terminal:\n\n' +
+                '    claude setup-token\n\n' +
+                '  This opens your browser to authenticate with your Claude account.\n' +
+                '  After auth, a 1-year token is printed to your terminal.'
+              );
+            } else {
+              clack.log.info(
+                'First, install the Claude Code CLI:\n\n' +
+                '    npm install -g @anthropic-ai/claude-code\n\n' +
+                '  Then run:\n\n' +
+                '    claude setup-token\n\n' +
+                '  This opens your browser to authenticate with your Claude account.\n' +
+                '  After auth, a 1-year token is printed to your terminal.'
+              );
+            }
+
+            let oauthToken = null;
+            while (!oauthToken) {
+              const tokenInput = await clack.password({
+                message: 'Paste your token here (starts with sk-ant-oat01-):',
+                validate: (input) => {
+                  if (!input) return 'Token is required (or press Ctrl+C to skip)';
+                  if (!input.startsWith('sk-ant-oat01-')) return 'Token must start with sk-ant-oat01-';
+                },
+              });
+              if (clack.isCancel(tokenInput)) {
+                clack.log.info('Skipped OAuth — agent jobs will use Pi with API credits.');
+                break;
+              }
+              oauthToken = tokenInput.trim();
+            }
+
+            if (oauthToken) {
+              collected.CLAUDE_CODE_OAUTH_TOKEN = oauthToken;
+              collected.AGENT_BACKEND = 'claude-code';
+
+              // OAuth replaces the API key for agent jobs — don't push it to GitHub.
+              // The key is still needed in .env for the event handler chat, so write it directly.
+              if (collected.ANTHROPIC_API_KEY) {
+                updateEnvVariable('ANTHROPIC_API_KEY', collected.ANTHROPIC_API_KEY);
+                delete collected.ANTHROPIC_API_KEY;
+              }
+              delete collected['__agentApiKey'];
+
+              clack.log.success(`Claude OAuth token added (${maskSecret(oauthToken)})`);
+              clack.log.info('Agent jobs will use Claude Code CLI with your subscription.');
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Step 3c: Brave Search (optional — not in .env, always ask)
   const braveKey = await promptForBraveKey();
   if (braveKey) {
     collected.BRAVE_API_KEY = braveKey;
     clack.log.success(`Brave Search key added (${maskSecret(braveKey)})`);
 
     // Enable brave-search skill symlink
-    const braveSymlink = path.join(process.cwd(), '.pi', 'skills', 'brave-search');
+    const braveSymlink = path.join(process.cwd(), 'skills', 'active', 'brave-search');
     if (!fs.existsSync(braveSymlink)) {
       fs.mkdirSync(path.dirname(braveSymlink), { recursive: true });
-      createDirLink('../../pi-skills/brave-search', braveSymlink);
+      createDirLink('../brave-search', braveSymlink);
       clack.log.success('Enabled brave-search skill');
 
       // Commit and push the symlink so the Docker agent can use it
       try {
-        execSync('git add .pi/skills/brave-search', { stdio: 'ignore' });
+        execSync('git add skills/active/brave-search', { stdio: 'ignore' });
         execSync('git commit -m "enable brave-search skill [no ci]"', { stdio: 'ignore' });
         const remote = execSync('git remote get-url origin', { encoding: 'utf-8' }).trim();
         const authedUrl = remote.replace('https://github.com/', `https://x-access-token:${pat}@github.com/`);
@@ -556,30 +690,44 @@ async function main() {
     collected.GH_REPO = repo;
   }
 
+  // Extract agent API key info before sync (not a real config target)
+  const agentApiKeyInfo = collected['__agentApiKey'];
+  delete collected['__agentApiKey'];
+
   const report = await syncConfig(env, collected, { owner, repo });
+
+  // If agent uses a different model/provider, overwrite the GitHub variable
+  // (.env keeps chatModel for the event handler, GitHub variable gets agentModel for jobs)
+  if (agentModel && agentModel !== chatModel) {
+    await setVariable(owner, repo, 'LLM_MODEL', agentModel);
+  }
+  if (agentProvider && agentProvider !== chatProvider) {
+    await setVariable(owner, repo, 'LLM_PROVIDER', agentProvider);
+  }
+
+  // Set agent API key as a separate GitHub secret (not in .env)
+  if (agentApiKeyInfo) {
+    const s2 = clack.spinner();
+    s2.start('Setting agent API key secret...');
+    const result = await setSecret(owner, repo, agentApiKeyInfo.secretName, agentApiKeyInfo.key);
+    if (result.success) {
+      s2.stop(`Agent secret ${agentApiKeyInfo.secretName} set`);
+      report.secrets.push(agentApiKeyInfo.secretName);
+    } else {
+      s2.stop(`Failed to set agent secret: ${result.error}`);
+    }
+  }
 
   clack.log.info('Your agent includes a web chat interface at your APP_URL.');
 
-  // ─── Step 6: Build & Start Server ────────────────────────────────────
-  clack.log.step(`[${++currentStep}/${TOTAL_STEPS}] Build & Start Server`);
-  clack.log.info('Now we\'ll build your agent\'s web interface. Then you\'ll start the server with Docker so it can receive webhooks and serve the chat UI.');
-
-  // Check if server is already running
-  let serverAlreadyRunning = false;
-  try {
-    await fetch('http://localhost:80/api/ping', {
-      method: 'GET',
-      signal: AbortSignal.timeout(3000),
-    });
-    serverAlreadyRunning = true;
-  } catch {
-    // Server not reachable
-  }
+  // ─── Step 6: Build ──────────────────────────────────────────────────
+  clack.log.step(`[${++currentStep}/${TOTAL_STEPS}] Build`);
 
   // Helper: run build with retry on failure
   async function runBuildWithRetry() {
     for (let attempt = 1; attempt <= 2; attempt++) {
       try {
+        fs.rmSync(path.join(process.cwd(), '.next'), { recursive: true, force: true });
         execSync('npm run build', { stdio: 'inherit' });
         clack.log.success('Build complete');
         return true;
@@ -596,51 +744,84 @@ async function main() {
     clack.log.error(
       'Cannot continue without a successful build.\n' +
       '  Fix the error above, then run:\n\n' +
-      '    npm run build\n' +
-      '    docker compose up -d'
+      '    npm run build'
     );
     process.exit(1);
   }
 
-  if (serverAlreadyRunning) {
-    clack.log.success('Server is already running');
-    if (await confirm('Rebuild and restart anyway?', false)) {
-      clack.log.info('Rebuilding Next.js...');
+  const hasExistingBuild = fs.existsSync(path.join(process.cwd(), '.next'));
+
+  if (hasExistingBuild) {
+    if (await confirm('Existing build found. Rebuild?')) {
+      clack.log.info('Building Next.js...');
       await runBuildWithRetry();
+    } else {
+      clack.log.info('Skipping build');
     }
   } else {
     clack.log.info('Building Next.js...');
     await runBuildWithRetry();
+  }
 
-    clack.log.info('Start Docker in a new terminal window:\n\n     docker compose up -d');
+  // ─── Step 7: Start Server ─────────────────────────────────────────────
+  clack.log.step(`[${++currentStep}/${TOTAL_STEPS}] Start Server`);
 
-    let serverReachable = false;
-    while (!serverReachable) {
-      await pressEnter('Press enter once Docker is running');
-      const serverSpinner = clack.spinner();
-      serverSpinner.start('Checking server...');
+  let serverRunning = false;
+  try {
+    await fetch('http://localhost:80/api/ping', {
+      method: 'GET',
+      signal: AbortSignal.timeout(3000),
+    });
+    serverRunning = true;
+  } catch {
+    // Server not reachable
+  }
+
+  if (serverRunning) {
+    if (await confirm('Server is already running. Restart?')) {
+      clack.log.info('Restarting server...');
       try {
-        await fetch('http://localhost:80/api/ping', {
-          method: 'GET',
-          signal: AbortSignal.timeout(5000),
-        });
-        serverSpinner.stop('Server is running');
-        serverReachable = true;
+        execSync('docker compose down && docker compose up -d', { stdio: 'inherit' });
+        clack.log.success('Server restarted');
       } catch {
-        serverSpinner.stop('Could not reach server on localhost:80');
+        clack.log.warn('Failed to restart. Run manually: docker compose down && docker compose up -d');
       }
+    }
+  } else {
+    clack.log.info('Starting server...');
+    try {
+      execSync('docker compose up -d', { stdio: 'inherit' });
+      clack.log.success('Server started');
+    } catch {
+      clack.log.warn('Failed to start. Run manually: docker compose up -d');
     }
   }
 
-  // ─── Step 7: Summary ─────────────────────────────────────────────────
+  clack.log.info(`Server starting — visit ${appUrl} (may take 10-20 seconds to load)`);
+
+  // ─── Step 8: Summary ─────────────────────────────────────────────────
   clack.log.step(`[${++currentStep}/${TOTAL_STEPS}] Setup Complete!`);
 
-  const providerLabel = agentProvider === 'custom' ? 'Local (OpenAI Compatible API)' : PROVIDERS[agentProvider].label;
+  const chatProviderLabel = chatProvider === 'custom' ? 'Local (OpenAI Compatible API)' : PROVIDERS[chatProvider].label;
 
   let summary = '';
   summary += `Repository:   ${owner}/${repo}\n`;
   summary += `App URL:      ${appUrl}\n`;
-  summary += `Agent LLM:    ${providerLabel} (${agentModel})\n`;
+
+  if (agentProvider || agentModel) {
+    const agentProviderLabel = agentProvider
+      ? (agentProvider === 'custom' ? 'Local (OpenAI Compatible API)' : PROVIDERS[agentProvider].label)
+      : chatProviderLabel;
+    const agentModelDisplay = agentModel || chatModel;
+    summary += `Chat LLM:     ${chatProviderLabel} (${chatModel})  [.env]\n`;
+    summary += `Agent LLM:    ${agentProviderLabel} (${agentModelDisplay})  [GitHub var]\n`;
+  } else {
+    summary += `LLM:          ${chatProviderLabel} (${chatModel})\n`;
+  }
+
+  if (collected.AGENT_BACKEND) {
+    summary += `Agent Runner: ${collected.AGENT_BACKEND === 'claude-code' ? 'Claude Code CLI (subscription)' : 'Pi Coding Agent (API credits)'}\n`;
+  }
   summary += `GitHub PAT:   ${maskSecret(pat)}`;
 
   clack.note(summary, 'Configuration');
@@ -652,11 +833,7 @@ async function main() {
     clack.log.info(`GitHub variables set: ${report.variables.join(', ')}`);
   }
 
-  clack.outro(
-    `Start your server:\n\n` +
-    `  docker compose up -d\n\n` +
-    `Then chat with your agent at ${appUrl}`
-  );
+  clack.outro(`Chat with your agent at ${appUrl}`);
 }
 
 main().catch((error) => {

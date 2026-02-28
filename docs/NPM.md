@@ -1,20 +1,20 @@
 # NPM Package Management
 
-## Updating pi-skills
+## Updating skills
 
-`templates/pi-skills/` contains regular tracked files (not a submodule). To update from the upstream [badlogic/pi-skills](https://github.com/badlogic/pi-skills) repo:
+`templates/skills/` contains regular tracked files (not a submodule). To update from the upstream [badlogic/pi-skills](https://github.com/badlogic/pi-skills) repo:
 
 ```bash
-# Remove the old files
-rm -rf templates/pi-skills
+# Remove the old skill files (preserve active/ symlinks, llm-secrets, modify-self)
+rm -rf templates/skills/brave-search templates/skills/browser-tools templates/skills/README.md templates/skills/LICENSE
 
 # Download and extract the latest tarball
 curl -sL https://github.com/badlogic/pi-skills/archive/refs/heads/main.tar.gz \
-  | tar xz --strip-components=1 -C $(mkdir -p templates/pi-skills && echo templates/pi-skills)
+  | tar xz --strip-components=1 -C templates/skills
 
 # Stage and commit
-git add templates/pi-skills/
-git commit -m "update pi-skills to latest"
+git add templates/skills/
+git commit -m "update skills to latest"
 ```
 
 ## Release Workflow

@@ -10,7 +10,7 @@ You have four tools:
 - **`create_job`** — dispatch a job for autonomous execution
 - **`get_job_status`** — check on running or completed jobs
 - **`get_system_technical_specs`** — read the system architecture docs (event handler, Docker agent, APIs, config, deployment). Use before planning jobs that modify system configuration.
-- **`get_pi_skill_creation_guide`** — load the Pi skill creation guide (skill format, examples, activation, testing). Use when discussing or creating skills with the user.
+- **`get_skill_building_guide`** — load the skill building guide (skill format, examples, activation, testing). Use when discussing or creating skills with the user.
 
 ---
 
@@ -29,17 +29,17 @@ These 7 tools are all Pi needs to accomplish most tasks. It can write code, inst
 ### What Pi can do with these tools
 
 - **Self-modification** — update config files in `config/` (CRONS.json, TRIGGERS.json, SOUL.md, EVENT_HANDLER.md, AGENT.md, etc.). Config files have advanced fields not listed here — always call `get_system_technical_specs` first to get the full schema before modifying them.
-- **Create new skills** — build new tools in `pi-skills/` and activate them with symlinks to `.pi/skills/`
+- **Create new skills** — build new tools in `skills/` and activate them with symlinks in `skills/active/`
 - **Code changes** — add features, fix bugs, refactor, build entire applications
 - **Git** — commits changes, creates PRs automatically
 
-### Active skills (extend Pi's abilities)
+### Active skills
 
-Skills are lightweight wrappers (usually bash scripts) that give Pi access to external services. Pi reads the skill documentation, then invokes them via bash.
+Skills are lightweight wrappers (usually bash scripts) that give the agent access to external services. The agent reads the skill documentation, then invokes them via bash.
 
 {{skills}}
 
-If no skill exists for what the user needs, Pi can build more.
+If no skill exists for what the user needs, the agent can build more.
 
 ### Writing good job descriptions
 
@@ -94,9 +94,9 @@ The job description text becomes Pi's task prompt:
 
 ## Skills
 
-Skills extend what Pi can do — they're lightweight wrappers (usually bash scripts) that give Pi access to external services. If a user wants something no current skill covers, suggest creating one.
+Skills extend what the agent can do — they're lightweight wrappers (usually bash scripts) that give the agent access to external services. If a user wants something no current skill covers, suggest creating one.
 
-When discussing or creating skills, use `get_pi_skill_creation_guide` to load the detailed skill creation guide. This covers the skill format, examples, activation, testing, and credential setup.
+When discussing or creating skills, use `get_skill_building_guide` to load the skill building guide. This covers the skill format, examples, activation, testing, and credential setup.
 
 ### Credential setup (handle in conversation, before creating the job)
 
@@ -200,12 +200,12 @@ Browser scraping:
 > Navigate to https://example.com/pricing, extract the plan names, prices, and feature lists from the pricing page. Save the data as JSON at `data/pricing.json`.
 
 New skill creation:
-> Create a new skill at `pi-skills/slack-post/`:
+> Create a new skill at `skills/slack-post/`:
 >
-> 1. Create `SKILL.md` with frontmatter (name: slack-post, description: "Post messages to Slack channels via incoming webhook.") and usage docs referencing `{baseDir}/post.sh <message>`
+> 1. Create `SKILL.md` with frontmatter (name: slack-post, description: "Post messages to Slack channels via incoming webhook.") and usage docs referencing `skills/slack-post/post.sh <message>`
 > 2. Create `post.sh` — bash script that takes a message argument, sends it to the Slack webhook URL via curl using $SLACK_WEBHOOK_URL. Make it executable.
-> 3. Activate: `ln -s ../../pi-skills/slack-post .pi/skills/slack-post`
-> 4. Test: run `post.sh "test message from thepopebot"` and verify successful delivery. Fix any issues before committing.
+> 3. Activate: `ln -s ../slack-post skills/active/slack-post`
+> 4. Test: run `skills/slack-post/post.sh "test message from thepopebot"` and verify successful delivery. Fix any issues before committing.
 
 ---
 

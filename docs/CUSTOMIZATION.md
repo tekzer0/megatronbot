@@ -91,7 +91,7 @@ Set `"enabled": true` to activate a scheduled job.
 
 ## Skills
 
-Add custom skills for the agent in `.pi/skills/`. Skills extend the agent's capabilities with specialized tools and behaviors.
+Add custom skills in `skills/` and activate them by symlinking into `skills/active/`. Both Pi and Claude Code discover skills from the same shared directory. Skills extend the agent's capabilities with specialized tools and behaviors.
 
 ---
 

@@ -69,7 +69,7 @@ You interact with your bot via the web chat interface or Telegram (optional). Th
 
 *\*ngrok is only required for local installs without port forwarding. VPS/cloud deployments don't need it. [Sign up](https://dashboard.ngrok.com/signup) for a free ngrok account, then run `ngrok config add-authtoken <YOUR_TOKEN>` before starting setup.*
 
-### Three steps
+### Two steps
 
 **Step 1** — Scaffold a new project:
 
@@ -93,18 +93,42 @@ The wizard walks you through everything:
 - Collects API keys (Anthropic required; OpenAI, Brave optional)
 - Sets GitHub repository secrets and variables
 - Generates `.env`
-- Builds the project
+- Builds the project and starts Docker for you
 
-**Step 3** — Start your agent:
-
-```bash
-docker compose up -d
-```
+**That's it.** Visit your APP_URL when the wizard finishes.
 
 - **Web Chat**: Visit your APP_URL to chat with your agent, create jobs, upload files
 - **Telegram** (optional): Run `npm run setup-telegram` to connect a Telegram bot
 - **Webhook**: Send a POST to `/api/create-job` with your API key to create jobs programmatically
 - **Cron**: Edit `config/CRONS.json` to schedule recurring jobs
+
+### Chat vs Agent LLM
+
+Your bot has two sides — a **chat** side and an **agent** side.
+
+**Chat** is the conversational part. When you talk to your bot in the web UI or Telegram, it uses the chat LLM. This runs on your server and responds in real time.
+
+**Agent** is the worker. When your bot needs to write code, modify files, or do a bigger task, it spins up a separate job that runs in a Docker container on GitHub. That job uses the agent LLM.
+
+By default, both use the same model. But during setup, you can choose different models for each — for example, a faster model for chat and a more capable one for agent jobs. The wizard asks "Would you like agent jobs to use different LLM settings?" and lets you pick.
+
+### Using a Claude Subscription (OAuth Token)
+
+If you have a Claude Pro ($20/mo) or Max ($100+/mo) subscription, you can use it to power your agent jobs instead of paying per API call. During setup, choose Anthropic as your agent provider and say yes when asked about a subscription.
+
+You'll need to generate a token:
+
+```bash
+# Install Claude Code CLI (if you don't have it)
+npm install -g @anthropic-ai/claude-code
+
+# Generate your token (opens browser to log in)
+claude setup-token
+```
+
+Paste the token (starts with `sk-ant-oat01-`) into the setup wizard. Your agent jobs will now run through your subscription. Note that usage counts toward your Claude.ai limits, and you still need an API key for the chat side.
+
+See [Claude Code vs Pi](docs/CLAUDE_CODE_VS_PI.md) for more details on the two agent backends.
 
 > **Local installs**: Your server needs to be reachable from the internet for GitHub webhooks and Telegram. On a VPS/cloud server, your APP_URL is just your domain. For local development, use [ngrok](https://ngrok.com) (`ngrok http 80`) or port forwarding to expose your machine.
 >
@@ -165,7 +189,7 @@ When you ran `thepopebot init` the first time, it scaffolded a project folder wi
 | `config/SOUL.md`, `EVENT_HANDLER.md`, `AGENT.md`, etc. | Your agent's personality, behavior, and prompts |
 | `config/CRONS.json`, `TRIGGERS.json` | Your scheduled jobs and webhook triggers |
 | `app/` | Next.js pages and UI components |
-| `docker/job/` | The Dockerfile for your agent's job container |
+| `docker/job-pi-coding-agent/` | The Dockerfile for the Pi coding agent job container |
 
 **Managed files** — These are infrastructure files that need to stay in sync with the package version. `init` auto-updates them for you:
 
@@ -175,6 +199,7 @@ When you ran `thepopebot init` the first time, it scaffolded a project folder wi
 | `docker-compose.yml` | Defines how your containers run together (Traefik, event handler, runner) |
 | `docker/event-handler/` | The Dockerfile for the event handler container |
 | `.dockerignore` | Keeps unnecessary files out of Docker builds |
+| `CLAUDE.md` | AI assistant context for your project |
 
 #### What happens when you run `init`
 
@@ -264,7 +289,7 @@ GitHub secrets use a prefix convention so the workflow can route them correctly:
 
 thepopebot includes API key authentication, webhook secret validation (fail-closed), session encryption, secret filtering in the Docker agent, and auto-merge path restrictions. However, all software carries risk — thepopebot is provided as-is, and you are responsible for securing your own infrastructure. If you're running locally with a tunnel (ngrok, Cloudflare Tunnel, port forwarding), be aware that your dev server endpoints are publicly accessible with no rate limiting and no TLS on the local hop.
 
-See [docs/SECURITY.md](docs/SECURITY.md) for full details on what's exposed, the risks, and recommendations.
+See [Security](docs/SECURITY.md) for full details on what's exposed, the risks, and recommendations.
 
 ---
 
@@ -272,7 +297,7 @@ See [docs/SECURITY.md](docs/SECURITY.md) for full details on what's exposed, the
 
 The Event Handler (chat, Telegram, webhooks) and Jobs (Docker agent) are two independent layers — each can run a different LLM. Use Claude for interactive chat and a cheaper or local model for long-running jobs, mix providers per cron entry, or run everything on a single model.
 
-See [docs/RUNNING_DIFFERENT_MODELS.md](docs/RUNNING_DIFFERENT_MODELS.md) for the full guide: Event Handler config, job defaults, per-job overrides, provider table, and custom provider setup.
+See [Running Different Models](docs/RUNNING_DIFFERENT_MODELS.md) for the full guide: Event Handler config, job defaults, per-job overrides, provider table, and custom provider setup.
 
 ---
 
@@ -287,7 +312,8 @@ See [docs/RUNNING_DIFFERENT_MODELS.md](docs/RUNNING_DIFFERENT_MODELS.md) for the
 | [Running Different Models](docs/RUNNING_DIFFERENT_MODELS.md) | Event Handler vs job model config, per-job overrides, providers, custom provider |
 | [Auto-Merge](docs/AUTO_MERGE.md) | Auto-merge controls, ALLOWED_PATHS configuration |
 | [Deployment](docs/DEPLOYMENT.md) | VPS setup, Docker Compose, HTTPS with Let's Encrypt |
-| [How to Use Pi](docs/HOW_TO_USE_PI.md) | Guide to the Pi coding agent |
+| [Claude Code vs Pi](docs/CLAUDE_CODE_VS_PI.md) | Comparing the two agent backends (subscription vs API credits) |
+| [How to Build Skills](docs/HOW_TO_BUILD_SKILLS.md) | Guide to building and activating agent skills |
 | [Pre-Release](docs/PRE_RELEASE.md) | Installing beta/alpha builds |
 | [Security](docs/SECURITY.md) | Security disclaimer, local development risks |
 | [Upgrading](docs/UPGRADE.md) | Automated upgrades, recovering from failed upgrades |
@@ -296,4 +322,4 @@ See [docs/RUNNING_DIFFERENT_MODELS.md](docs/RUNNING_DIFFERENT_MODELS.md) for the
 
 | Document | Description |
 |----------|-------------|
-| [NPM](docs/NPM.md) | Updating pi-skills, versioning, and publishing releases |
+| [NPM](docs/NPM.md) | Updating skills, versioning, and publishing releases |

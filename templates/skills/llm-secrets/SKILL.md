@@ -6,7 +6,7 @@ description: List available LLM-accessible credentials. Use when you need API ke
 # List Available Secrets
 
 ```bash
-/job/.pi/skills/llm-secrets/llm-secrets.js
+skills/llm-secrets/llm-secrets.js
 ```
 
 Shows the names of available secret keys (not values). Output example:

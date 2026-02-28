@@ -2,7 +2,7 @@ name: Notify Job Failed
 
 on:
   workflow_run:
-    workflows: ["Run thepopebot Job"]
+    workflows: ["Agent Job"]
     types: [completed]
 
 jobs:
@@ -29,10 +29,10 @@ jobs:
           RUN_ID="${{ github.event.workflow_run.id }}"
           RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${RUN_ID}"
 
-          # Read job.md (exists on branch from job creation)
+          # Read job description from job.config.json (exists on branch from job creation)
           JOB_CONTENT=""
-          if [ -f "logs/${JOB_ID}/job.md" ]; then
-            JOB_CONTENT=$(cat "logs/${JOB_ID}/job.md")
+          if [ -f "logs/${JOB_ID}/job.config.json" ]; then
+            JOB_CONTENT=$(jq -r '.job // empty' "logs/${JOB_ID}/job.config.json")
           fi
 
           COMMIT_SHA=$(git rev-parse HEAD)

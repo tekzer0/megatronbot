@@ -75,6 +75,17 @@ export function UpgradeDialog({ open, onClose, version, updateAvailable, changel
               <p>
                 The site may be briefly unresponsive for a few seconds when the server restarts.
               </p>
+              <p>
+                Some files (prompts, crons, triggers) won't be auto-updated to avoid breaking your bot.{' '}
+                <a
+                  href="https://github.com/stephengpope/thepopebot?tab=readme-ov-file#understanding-init"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-emerald-500 hover:underline"
+                >
+                  Learn more
+                </a>.
+              </p>
             </div>
 
             <div className="mt-4 rounded-md border border-border bg-muted/30 p-3">

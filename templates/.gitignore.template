@@ -6,12 +6,13 @@
 *.key
 
 .claude/*
+!.claude/skills
 
 # Pi system prompt (generated at runtime from SOUL.md)
 .pi/SYSTEM.md
 
-# Pi skills dependencies (installed at runtime in Docker for correct arch)
-pi-skills/*/node_modules/
+# Skills dependencies (installed at runtime in Docker for correct arch)
+skills/*/node_modules/
 
 # Node
 node_modules/

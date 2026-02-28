@@ -95,10 +95,10 @@ description: Short description shown to agent
 # Instructions
 
 Detailed instructions here...
-Helper files available at: {baseDir}/
+Helper files available at: skills/skill-name/
 ```
 
-The `{baseDir}` placeholder is replaced with the skill's directory path at runtime.
+Skills use project-root-relative paths (e.g., `skills/brave-search/search.js`).
 
 ## Requirements
 

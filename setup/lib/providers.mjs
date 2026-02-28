@@ -12,9 +12,10 @@ export const PROVIDERS = {
     keyPrefix: 'sk-ant-',
     keyPage: 'https://platform.claude.com/settings/keys',
     builtin: true,
+    oauthSupported: true,
     models: [
-      { id: 'claude-sonnet-4-5-20250929', name: 'Claude Sonnet 4.5', default: true },
-      { id: 'claude-opus-4-20250514', name: 'Claude Opus 4' },
+      { id: 'claude-opus-4-6', name: 'Claude Opus 4.6', default: true },
+      { id: 'claude-sonnet-4-6', name: 'Claude Sonnet 4.6' },
       { id: 'claude-haiku-4-5-20251001', name: 'Claude Haiku 4.5' },
     ],
   },
@@ -28,8 +29,9 @@ export const PROVIDERS = {
     baseUrl: 'https://api.openai.com/v1',
     api: 'openai-completions',
     models: [
-      { id: 'gpt-4o', name: 'GPT-4o', default: true },
-      { id: 'o3-mini', name: 'o3-mini' },
+      { id: 'gpt-5.2', name: 'GPT-5.2', default: true },
+      { id: 'gpt-4o', name: 'GPT-4o' },
+      { id: 'o4-mini', name: 'o4-mini' },
     ],
   },
   google: {
@@ -39,7 +41,7 @@ export const PROVIDERS = {
     keyPage: 'https://aistudio.google.com/apikey',
     builtin: true,
     models: [
-      { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro', default: true },
+      { id: 'gemini-3.1-pro', name: 'Gemini 3.1 Pro', default: true },
       { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash' },
     ],
   },

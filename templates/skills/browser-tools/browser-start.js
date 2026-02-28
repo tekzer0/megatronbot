@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { spawn, execSync } from "node:child_process";
-import puppeteer from "puppeteer-core";
+import puppeteer from "puppeteer";
 
 const useProfile = process.argv[2] === "--profile";
 
@@ -51,8 +51,9 @@ if (useProfile) {
 }
 
 // Start Chrome with flags to force new instance
+const chromePath = puppeteer.executablePath();
 spawn(
-	"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+	chromePath,
 	[
 		"--remote-debugging-port=9222",
 		`--user-data-dir=${SCRAPING_DIR}`,

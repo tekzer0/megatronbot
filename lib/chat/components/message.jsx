@@ -67,7 +67,8 @@ export const linkSafety = {
 const TOOL_DISPLAY_NAMES = {
   create_job: 'Create Job',
   get_job_status: 'Check Job Status',
-  get_system_technical_specs: 'Read System Docs',
+  get_system_technical_specs: 'Read Tech Docs',
+  get_skill_building_guide: 'Read Skill Docs',
 };
 
 function getToolDisplayName(toolName) {

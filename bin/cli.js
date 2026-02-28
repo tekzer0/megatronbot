@@ -20,6 +20,7 @@ const MANAGED_PATHS = [
   'docker/event-handler/',
   'docker-compose.yml',
   '.dockerignore',
+  'CLAUDE.md',
 ];
 
 function isManaged(relPath) {
@@ -206,15 +207,32 @@ async function init() {
     }
   }
 
-  // Create default skill symlinks (brave-search, browser-tools)
-  const defaultSkills = ['browser-tools'];
+  // Create default skill activation symlinks
+  const defaultSkills = ['browser-tools', 'llm-secrets', 'modify-self'];
+  const activeDir = path.join(cwd, 'skills', 'active');
+  fs.mkdirSync(activeDir, { recursive: true });
   for (const skill of defaultSkills) {
-    const symlink = path.join(cwd, '.pi', 'skills', skill);
+    const symlink = path.join(activeDir, skill);
     if (!fs.existsSync(symlink)) {
-      fs.mkdirSync(path.dirname(symlink), { recursive: true });
-      createDirLink(`../../pi-skills/${skill}`, symlink);
-      console.log(`  Created .pi/skills/${skill} → ../../pi-skills/${skill}`);
+      createDirLink(`../${skill}`, symlink);
+      console.log(`  Created skills/active/${skill} → ../${skill}`);
     }
+  }
+
+  // Create .pi/skills → ../skills/active symlink
+  const piSkillsLink = path.join(cwd, '.pi', 'skills');
+  if (!fs.existsSync(piSkillsLink)) {
+    fs.mkdirSync(path.dirname(piSkillsLink), { recursive: true });
+    createDirLink('../skills/active', piSkillsLink);
+    console.log('  Created .pi/skills → ../skills/active');
+  }
+
+  // Create .claude/skills → ../skills/active symlink
+  const claudeSkillsLink = path.join(cwd, '.claude', 'skills');
+  if (!fs.existsSync(claudeSkillsLink)) {
+    fs.mkdirSync(path.dirname(claudeSkillsLink), { recursive: true });
+    createDirLink('../skills/active', claudeSkillsLink);
+    console.log('  Created .claude/skills → ../skills/active');
   }
 
   // Report updated managed files

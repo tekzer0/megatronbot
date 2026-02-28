@@ -70,20 +70,21 @@
   border-radius: 3px;
 }
 
-/* Code block horizontal scroll (overrides streamdown's overflow-hidden) */
-[data-streamdown="code-block"] {
-  overflow-x: auto;
+/* Code block horizontal scroll — target the pre (code-block-body), not the
+   outer wrapper which needs overflow-hidden for border-radius clipping */
+[data-streamdown="code-block-body"] {
+  overflow-x: auto !important;
 }
 
-[data-streamdown="code-block"]::-webkit-scrollbar {
+[data-streamdown="code-block-body"]::-webkit-scrollbar {
   height: 6px;
 }
 
-[data-streamdown="code-block"]::-webkit-scrollbar-track {
+[data-streamdown="code-block-body"]::-webkit-scrollbar-track {
   background: transparent;
 }
 
-[data-streamdown="code-block"]::-webkit-scrollbar-thumb {
+[data-streamdown="code-block-body"]::-webkit-scrollbar-thumb {
   background-color: var(--border);
   border-radius: 3px;
 }

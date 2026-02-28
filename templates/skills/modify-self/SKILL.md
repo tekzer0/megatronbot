@@ -8,5 +8,5 @@ description: Use when a job requires modifying the agent's own code, configurati
 Before making any changes, read the project documentation for a full understanding of the system architecture:
 
 ```bash
-cat /job/CLAUDE.md
+cat CLAUDE.md
 ```

@@ -70,11 +70,16 @@ export async function promptForProvider() {
 
 /**
  * Prompt for model selection from a provider's model list
+ * @param {string} providerKey - Provider key from PROVIDERS registry
+ * @param {object} [options] - Options
+ * @param {string} [options.defaultModelId] - Override which model gets "(recommended)" instead of the registry default
  */
-export async function promptForModel(providerKey) {
+export async function promptForModel(providerKey, { defaultModelId } = {}) {
   const provider = PROVIDERS[providerKey];
-  const options = provider.models.map((m) => ({
-    label: m.default ? `${m.name} (recommended)` : m.name,
+  const isRecommended = (m) => defaultModelId ? m.id === defaultModelId : m.default;
+  const sorted = [...provider.models].sort((a, b) => isRecommended(b) - isRecommended(a));
+  const options = sorted.map((m) => ({
+    label: isRecommended(m) ? `${m.name} (recommended)` : m.name,
     value: m.id,
   }));
   options.push({ label: 'Custom (enter model ID)', value: '__custom__' });

@@ -1,19 +1,19 @@
-# Skill Creation Guide
+# Skill Building Guide
 
 ## What is a skill?
 
-Skills are lightweight wrappers that extend Pi's abilities. They live in `pi-skills/<skill-name>/` and are activated by symlinking to `.pi/skills/`.
+Skills are lightweight wrappers that extend agent abilities. They live in `skills/<skill-name>/` and are activated by symlinking into `skills/active/`. Both Pi and Claude Code discover skills from the same shared directory.
 
 ## Skill structure
 
 - **`SKILL.md`** (required) — YAML frontmatter + markdown documentation
-- **Scripts** (optional) — prefer bash (.sh). Pi works primarily in bash.
+- **Scripts** (optional) — prefer bash (.sh) for simplicity
 - **`package.json`** (optional) — only if Node.js dependencies are truly needed
 
 ## SKILL.md format
 
-The `description` from frontmatter appears in the event handler's system prompt under "Active skills."
-The `{baseDir}` placeholder is replaced at runtime with the skill's actual directory path.
+The `description` from frontmatter appears in the system prompt under "Active skills."
+Use project-root-relative paths in documentation (e.g., `skills/<skill-name>/script.sh`).
 
 ```
 ---
@@ -26,7 +26,7 @@ description: One sentence describing what the skill does and when to use it.
 ## Usage
 
 ```bash
-{baseDir}/script.sh <args>
+skills/skill-name/script.sh <args>
 ```
 ```
 
@@ -34,7 +34,7 @@ description: One sentence describing what the skill does and when to use it.
 
 The built-in `transcribe` skill — a SKILL.md and a single bash script:
 
-**pi-skills/transcribe/SKILL.md:**
+**skills/transcribe/SKILL.md:**
 ```
 ---
 name: transcribe
@@ -50,11 +50,11 @@ Requires GROQ_API_KEY environment variable.
 
 ## Usage
 ```bash
-{baseDir}/transcribe.sh <audio-file>
+skills/transcribe/transcribe.sh <audio-file>
 ```
 ```
 
-**pi-skills/transcribe/transcribe.sh:**
+**skills/transcribe/transcribe.sh:**
 ```bash
 #!/bin/bash
 if [ -z "$1" ]; then echo "Usage: transcribe.sh <audio-file>"; exit 1; fi
@@ -68,18 +68,18 @@ curl -s -X POST "https://api.groq.com/openai/v1/audio/transcriptions" \
 
 ## Example: Skill with Node.js dependencies
 
-The built-in `brave-search` skill uses Node.js for HTML parsing (jsdom, readability, turndown). It has a `package.json` and `.js` scripts. Pi runs `npm install` in the skill directory automatically. Use this pattern only when bash + curl isn't sufficient.
+The built-in `brave-search` skill uses Node.js for HTML parsing (jsdom, readability, turndown). It has a `package.json` and `.js` scripts. Dependencies are installed automatically in Docker. Use this pattern only when bash + curl isn't sufficient.
 
 ## Activation
 
 After creating skill files, symlink to activate:
 ```bash
-ln -s ../../pi-skills/skill-name .pi/skills/skill-name
+ln -s ../skill-name skills/active/skill-name
 ```
 
 ## Always build AND test in the same job
 
-Tell Pi to test the skill with real input after creating it and fix any issues before committing. Don't create untested skills.
+Tell the agent to test the skill with real input after creating it and fix any issues before committing. Don't create untested skills.
 
 ## Credential setup
 
