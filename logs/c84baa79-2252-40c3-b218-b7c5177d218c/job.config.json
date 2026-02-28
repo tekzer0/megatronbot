@@ -1,0 +1,4 @@
+{
+  "title": "Debug the `pi-skills/telegram-voice/` skill:",
+  "job": "Debug the `pi-skills/telegram-voice/` skill:\n1. Re-run the test command (`speak.sh 'Debugging voice replies.'`) from within the `telegram-voice` skill directory.\n2. Capture the full stdout and stderr from the `speak.sh` execution.\n3. Verify that the required environment variables (`ELEVENLABS_API_KEY`, `ELEVENLABS_VOICE_ID`, `TELEGRAM_BOT_TOKEN`, and `TELEGRAM_CHAT_ID`) are accessible and appear to be correctly formatted (e.g., non-empty, basic regex for token/key format).\n4. If the test fails, analyze the error output to pinpoint the problem (e.g., ElevenLabs API error, Telegram API error, missing `curl`, incorrect syntax).\n5. Output all findings, including environment variable checks and error messages, to stdout so I can report them back to the user."
+}
