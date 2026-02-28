@@ -1,0 +1,25 @@
+Warning: Input is not a terminal (fd=0).
+────────────────────────────────────────────────────────────────────────────────
+Warning for groq/moonshotai/kimi-k2-instruct: Unknown context window size and 
+costs, using sane defaults.
+Did you mean one of these?
+- groq/moonshotai/kimi-k2-instruct-0905
+You can skip this check with --no-show-model-warnings
+
+https://aider.chat/docs/llms/warnings.html
+
+Aider v0.86.2
+Model: groq/moonshotai/kimi-k2-instruct with whole edit format
+Git repo: .git with 238 files
+Repo-map: using 1024 tokens, auto refresh
+Added CLAUDE.md to the chat (read-only).
+
+
+https://aider.chat/HISTORY.html#release-notes
+
+Initial repo scan can be slow in larger repos, but only happens once.
+Scanning repo:   0%|          | 0/238 [00:00<?, ?it/s]Scanning repo:  11%|█         | 25/238 [00:00<00:01, 127.15it/s]Scanning repo:  21%|██        | 49/238 [00:00<00:01, 170.58it/s]Scanning repo:  29%|██▊       | 68/238 [00:00<00:01, 103.54it/s]Scanning repo:  34%|███▍      | 82/238 [00:00<00:01, 86.68it/s] Scanning repo:  39%|███▉      | 93/238 [00:00<00:01, 81.64it/s]Scanning repo:  43%|████▎     | 103/238 [00:01<00:01, 78.28it/s]Scanning repo:  56%|█████▋    | 134/238 [00:01<00:00, 124.24it/s]Scanning repo:  63%|██████▎   | 149/238 [00:01<00:00, 97.74it/s] Scanning repo:  70%|██████▉   | 166/238 [00:01<00:00, 111.73it/s]Scanning repo:  76%|███████▌  | 180/238 [00:01<00:00, 92.35it/s] Scanning repo:  81%|████████  | 192/238 [00:01<00:00, 92.11it/s]Scanning repo:  92%|█████████▏| 219/238 [00:02<00:00, 128.31it/s]Scanning repo:  99%|█████████▊| 235/238 [00:02<00:00, 126.79it/s]Scanning repo: 100%|██████████| 238/238 [00:02<00:00, 108.71it/s]
+I need to read the file at config/HEARTBEAT.md first. Please add this file to   
+the chat so I can see the tasks described there.                                
+
+Tokens: 1.8k sent, 32 received.
