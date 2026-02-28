@@ -45,3 +45,4 @@ temp/
 lib/chat/components/*.js
 !lib/chat/components/index.js
 lib/chat/components/ui/*.js
+.aider*

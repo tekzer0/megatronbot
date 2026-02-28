@@ -1,0 +1,39 @@
+Warning: Input is not a terminal (fd=0).
+────────────────────────────────────────────────────────────────────────────────
+You can skip this check with --no-gitignore
+Added .aider* to .gitignore
+Warning for groq/moonshotai/kimi-k2-instruct: Unknown context window size and 
+costs, using sane defaults.
+Did you mean one of these?
+- groq/moonshotai/kimi-k2-instruct-0905
+You can skip this check with --no-show-model-warnings
+
+https://aider.chat/docs/llms/warnings.html
+
+Aider v0.86.2
+Model: groq/moonshotai/kimi-k2-instruct with whole edit format
+Git repo: .git with 236 files
+Repo-map: using 1024 tokens, auto refresh
+Added CLAUDE.md to the chat (read-only).
+
+
+https://aider.chat/HISTORY.html#release-notes
+
+Initial repo scan can be slow in larger repos, but only happens once.
+Scanning repo:   0%|          | 0/236 [00:00<?, ?it/s]Scanning repo:  11%|█         | 25/236 [00:00<00:01, 119.66it/s]Scanning repo:  21%|██        | 49/236 [00:00<00:01, 162.70it/s]Scanning repo:  28%|██▊       | 67/236 [00:00<00:01, 101.86it/s]Scanning repo:  34%|███▍      | 80/236 [00:00<00:01, 83.83it/s] Scanning repo:  38%|███▊      | 90/236 [00:00<00:01, 79.37it/s]Scanning repo:  42%|████▏     | 99/236 [00:01<00:01, 76.04it/s]Scanning repo:  46%|████▌     | 108/236 [00:01<00:01, 75.83it/s]Scanning repo:  57%|█████▋    | 135/236 [00:01<00:00, 119.86it/s]Scanning repo:  63%|██████▎   | 149/236 [00:01<00:00, 95.45it/s] Scanning repo:  69%|██████▉   | 164/236 [00:01<00:00, 106.09it/s]Scanning repo:  75%|███████▌  | 177/236 [00:01<00:00, 87.08it/s] Scanning repo:  80%|███████▉  | 188/236 [00:02<00:00, 83.07it/s]Scanning repo:  92%|█████████▏| 217/236 [00:02<00:00, 124.00it/s]Scanning repo:  98%|█████████▊| 232/236 [00:02<00:00, 120.52it/s]Scanning repo: 100%|██████████| 236/236 [00:02<00:00, 102.99it/s]
+I'll help you create the local-calendar skill. Based on the requirements, I need
+to create new files rather than modify existing ones. Here are the files I'll   
+create:                                                                         
+
+ 1 pi-skills/local-calendar/SKILL.md - Documentation and front-matter           
+ 2 pi-skills/local-calendar/add-apt.sh - Script to add appointments             
+ 3 pi-skills/local-calendar/list-today.sh - Script to list today's events       
+ 4 pi-skills/local-calendar/list-week.sh - Script to list next 7 days           
+ 5 pi-skills/local-calendar/del-event.sh - Script to delete events by UID       
+ 6 pi-skills/local-calendar/sync-from-ha.sh - Script to sync from Home Assistant
+   (optional)                                                                   
+
+These will all be new files since this is a new skill being created. Would you  
+like me to add these files to the chat so I can create them?                    
+
+Tokens: 2.1k sent, 194 received.
