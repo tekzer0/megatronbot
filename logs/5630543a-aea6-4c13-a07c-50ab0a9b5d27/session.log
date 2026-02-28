@@ -1,0 +1,35 @@
+Warning: Input is not a terminal (fd=0).
+────────────────────────────────────────────────────────────────────────────────
+Aider respects your privacy and never collects your code, chat messages, keys or
+personal info.
+For more info: https://aider.chat/docs/more/analytics.html
+
+Warning for groq/moonshotai/kimi-k2-instruct: Unknown context window size and 
+costs, using sane defaults.
+Did you mean one of these?
+- groq/moonshotai/kimi-k2-instruct-0905
+You can skip this check with --no-show-model-warnings
+
+https://aider.chat/docs/llms/warnings.html
+
+Aider v0.86.2
+Model: groq/moonshotai/kimi-k2-instruct with whole edit format
+Git repo: .git with 289 files
+Repo-map: using 1024 tokens, auto refresh
+Added CLAUDE.md to the chat (read-only).
+
+
+https://aider.chat/HISTORY.html#release-notes
+
+Initial repo scan can be slow in larger repos, but only happens once.
+Scanning repo:   0%|          | 0/289 [00:00<?, ?it/s]Scanning repo:   9%|▉         | 26/289 [00:00<00:02, 130.46it/s]Scanning repo:  17%|█▋        | 50/289 [00:00<00:01, 172.35it/s]Scanning repo:  24%|██▍       | 69/289 [00:00<00:02, 104.18it/s]Scanning repo:  29%|██▊       | 83/289 [00:00<00:02, 87.03it/s] Scanning repo:  33%|███▎      | 94/289 [00:00<00:02, 82.13it/s]Scanning repo:  36%|███▌      | 104/289 [00:01<00:02, 78.52it/s]Scanning repo:  63%|██████▎   | 181/289 [00:01<00:00, 226.25it/s]Scanning repo:  73%|███████▎  | 212/289 [00:01<00:00, 162.04it/s]Scanning repo:  82%|████████▏ | 237/289 [00:01<00:00, 115.38it/s]Scanning repo:  91%|█████████▏| 264/289 [00:02<00:00, 137.04it/s]Scanning repo:  99%|█████████▊| 285/289 [00:02<00:00, 135.42it/s]Scanning repo: 100%|██████████| 289/289 [00:02<00:00, 129.83it/s]
+To implement this audit report, the most likely file that needs to be changed   
+is:                                                                             
+
+ • .github/workflows/audit-auto-merge.yml (or a similar workflow file that you  
+   will create or modify to run the audit script)                               
+
+Please add that file to the chat so I can provide the complete updated file     
+content. If it does not exist yet, let me know and I’ll create it.              
+
+Tokens: 2.0k sent, 80 received.
