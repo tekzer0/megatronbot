@@ -1,0 +1,4 @@
+{
+  "title": "Create `pi-skills/telegram-voice/`:",
+  "job": "Create `pi-skills/telegram-voice/`:\n1. `SKILL.md` – front-matter, usage `{baseDir}/speak.sh \"text\"`\n2. `speak.sh` – bash script that:\n   - grabs `$ELEVENLABS_API_KEY` and `$ELEVENLABS_VOICE_ID`\n   - POST text to ElevenLabs /v1/text-to-speech → MP3\n   - POST MP3 to Telegram `sendVoice` using `$TELEGRAM_BOT_TOKEN` and `$TELEGRAM_CHAT_ID`\n   - cleans up temp files\n3. Activate: `ln -s ../../pi-skills/telegram-voice .pi/skills/telegram-voice`\n4. Test: `speak.sh \"Voice replies are now live.\"` and confirm the voice message arrives in Telegram\n5. Commit if successful"
+}
