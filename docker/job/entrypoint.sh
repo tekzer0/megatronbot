@@ -10,13 +10,11 @@ fi
 echo "Job ID: ${JOB_ID}"
 
 # Export SECRETS (JSON) as flat env vars (GH_TOKEN, GROQ_API_KEY, etc.)
-# These are filtered from LLM's bash subprocess by env-sanitizer extension
 if [ -n "$SECRETS" ]; then
     eval $(echo "$SECRETS" | jq -r 'to_entries | .[] | "export \(.key)=\(.value | @sh)"')
 fi
 
 # Export LLM_SECRETS (JSON) as flat env vars
-# These are NOT filtered - LLM can access these (browser logins, skill API keys, etc.)
 if [ -n "$LLM_SECRETS" ]; then
     eval $(echo "$LLM_SECRETS" | jq -r 'to_entries | .[] | "export \(.key)=\(.value | @sh)"')
 fi
@@ -59,7 +57,18 @@ done
 # Resolve {{datetime}} in CLAUDE.md
 sed -i "s/{{datetime}}/$(date -u +"%Y-%m-%dT%H:%M:%SZ")/g" "$CLAUDE_MD"
 
-PROMPT="$(cat /job/logs/${JOB_ID}/job.md)"
+# Read job metadata — support both job.config.json (beta.15+) and job.md (legacy)
+JOB_CONFIG="${LOG_DIR}/job.config.json"
+if [ -f "$JOB_CONFIG" ]; then
+    TITLE=$(jq -r '.title // empty' "$JOB_CONFIG")
+    PROMPT=$(jq -r '.job // empty' "$JOB_CONFIG")
+elif [ -f "${LOG_DIR}/job.md" ]; then
+    TITLE="Job ${JOB_ID}"
+    PROMPT="$(cat "${LOG_DIR}/job.md")"
+else
+    echo "No job.config.json or job.md found in ${LOG_DIR}"
+    exit 1
+fi
 
 # Build aider model string based on provider
 # google -> gemini/<model> (uses GEMINI_API_KEY)
@@ -69,7 +78,6 @@ MODEL="${LLM_MODEL:-moonshotai/kimi-k2-instruct}"
 
 if [ "$LLM_PROVIDER" = "google" ]; then
     AIDER_MODEL="gemini/${MODEL}"
-    # aider uses GEMINI_API_KEY for Google AI Studio
     export GEMINI_API_KEY="${GEMINI_API_KEY:-$GOOGLE_API_KEY}"
 else
     AIDER_MODEL="groq/${MODEL}"
@@ -90,12 +98,10 @@ AGENT_EXIT=${PIPESTATUS[0]}
 
 # Commit based on outcome
 if [ $AGENT_EXIT -ne 0 ]; then
-    # Agent failed — only commit session logs, not partial code changes
     git reset || true
     git add -f "${LOG_DIR}"
     git commit -m "megatronbot: job ${JOB_ID} (failed)" || true
 else
-    # Agent succeeded — commit everything
     git add -A
     git add -f "${LOG_DIR}"
     git commit -m "megatronbot: job ${JOB_ID}" || true
@@ -105,7 +111,7 @@ git push origin
 set -e
 
 # Create PR (auto-merge handled by GitHub Actions workflow)
-gh pr create --title "megatronbot: job ${JOB_ID}" --body "Automated job" --base main || true
+gh pr create --title "megatronbot: job ${JOB_ID}" --body "${PROMPT}" --base main || true
 
 # Re-raise agent's failure so the workflow reports it
 if [ $AGENT_EXIT -ne 0 ]; then
