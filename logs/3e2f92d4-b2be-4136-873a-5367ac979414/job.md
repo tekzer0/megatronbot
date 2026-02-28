@@ -1,0 +1,1 @@
+Simple health-check job: write the current timestamp to `test-$(date +%s).txt`, commit it, and exit 0. This will verify the Docker image pulls, the container starts, and the workflow completes without the previous exit-125 failure.
