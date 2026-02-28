@@ -1,0 +1,335 @@
+Warning: Input is not a terminal (fd=0).
+────────────────────────────────────────────────────────────────────────────────
+Warning for groq/moonshotai/kimi-k2-instruct: Unknown context window size and 
+costs, using sane defaults.
+Did you mean one of these?
+- groq/moonshotai/kimi-k2-instruct-0905
+You can skip this check with --no-show-model-warnings
+
+https://aider.chat/docs/llms/warnings.html
+
+Aider v0.86.2
+Model: groq/moonshotai/kimi-k2-instruct with whole edit format
+Git repo: .git with 286 files
+Repo-map: using 1024 tokens, auto refresh
+Added CLAUDE.md to the chat (read-only).
+
+
+https://aider.chat/HISTORY.html#release-notes
+
+Initial repo scan can be slow in larger repos, but only happens once.
+Scanning repo:   0%|          | 0/286 [00:00<?, ?it/s]Scanning repo:   9%|▉         | 26/286 [00:00<00:02, 126.59it/s]Scanning repo:  17%|█▋        | 50/286 [00:00<00:01, 168.44it/s]Scanning repo:  24%|██▍       | 69/286 [00:00<00:02, 102.83it/s]Scanning repo:  29%|██▊       | 82/286 [00:00<00:02, 86.43it/s] Scanning repo:  33%|███▎      | 93/286 [00:00<00:02, 81.45it/s]Scanning repo:  36%|███▌      | 103/286 [00:01<00:02, 64.69it/s]Scanning repo:  61%|██████    | 175/286 [00:01<00:00, 184.87it/s]Scanning repo:  71%|███████   | 203/286 [00:01<00:00, 165.45it/s]Scanning repo:  79%|███████▉  | 227/286 [00:01<00:00, 127.30it/s]Scanning repo:  86%|████████▌ | 246/286 [00:02<00:00, 125.03it/s]Scanning repo:  94%|█████████▎| 268/286 [00:02<00:00, 140.70it/s]Scanning repo: 100%|██████████| 286/286 [00:02<00:00, 139.51it/s]Scanning repo: 100%|██████████| 286/286 [00:02<00:00, 126.52it/s]
+This request needs a new script/utility file to perform the audit and write the 
+markdown report. No existing project files need to be changed.                  
+
+I suggest creating:                                                             
+
+                                                                                
+scripts/audit_recent_jobs.js                                                    
+                                                                                
+
+path/to/filename.js                                                             
+
+                                                                                
+#!/usr/bin/env node                                                             
+const { execSync } = require('child_process');                                  
+const fs = require('fs');                                                       
+const path = require('path');                                                   
+                                                                                
+function run(cmd) {                                                             
+  return execSync(cmd, { encoding: 'utf8', shell: '/bin/bash' }).trim();        
+}                                                                               
+                                                                                
+// 1. Get commits from the last 24 hours whose message starts with "job/"       
+const commitsRaw = run(`git log --since="24 hours ago" --grep="^job/"           
+--format="%h %s %an"`);                                                         
+if (!commitsRaw) {                                                              
+  process.stdout.write('No job commits in the last 24 hours.\n');               
+  process.exit(0);                                                              
+}                                                                               
+                                                                                
+const commits = commitsRaw.split('\n').map(line => {                            
+  const [hash, ...rest] = line.split(' ');                                      
+  const messageAndAuthor = rest.join(' ');                                      
+  const lastSpace = messageAndAuthor.lastIndexOf(' ');                          
+  return {                                                                      
+    hash,                                                                       
+    message: messageAndAuthor.slice(0, lastSpace),                              
+    author: messageAndAuthor.slice(lastSpace + 1)                               
+  };                                                                            
+});                                                                             
+                                                                                
+// Build markdown report                                                        
+let md = '# Recent Auto-Merged Job Commits\n\n';                                
+md += `Generated on: ${new Date().toISOString()}\n\n`;                          
+                                                                                
+for (const c of commits) {                                                      
+  md += `## ${c.hash} – ${c.message}\n`;                                        
+  md += `**Author:** ${c.author}\n\n`;                                          
+  const files = run(`git show --name-only                                       
+${c.hash}`).split('\n').filter(Boolean);                                        
+  md += '**Files changed:**\n';                                                 
+  for (const file of files) {                                                   
+    md += `- \`${file}\`\n`;                                                    
+  }                                                                             
+  md += '\n';                                                                   
+}                                                                               
+                                                                                
+const outFile = path.resolve(process.cwd(), 'docs/audit_recent_jobs.md');       
+fs.mkdirSync(path.dirname(outFile), { recursive: true });                       
+fs.writeFileSync(outFile, md, 'utf8');                                          
+                                                                                
+// 4. One-line summary to stdout                                                
+process.stdout.write(`Audit complete: ${commits.length} job commit(s) written to
+${outFile}\n`);                                                                 
+                                                                                
+
+Tokens: 1.9k sent, 481 received.
+The LLM did not conform to the edit format.
+https://aider.chat/docs/troubleshooting/edit-errors.html
+
+No filename provided before ``` in file listing
+scripts/audit_recent_jobs.js                                                    
+
+                                                                                
+#!/usr/bin/env node                                                             
+                                                                                
+const { execSync } = require('child_process');                                  
+                                                                                
+const fs = require('fs');                                                       
+                                                                                
+const path = require('path');                                                   
+                                                                                
+                                                                                
+                                                                                
+function run(cmd) {                                                             
+                                                                                
+  return execSync(cmd, { encoding: 'utf8', shell: '/bin/bash' }).trim();        
+                                                                                
+}                                                                               
+                                                                                
+                                                                                
+                                                                                
+// 1. Get commits from the last 24 hours whose message starts with "job/"       
+                                                                                
+const commitsRaw = run(`git log --since="24 hours ago" --grep="^job/"           
+--format="%h %s %an"`);                                                         
+                                                                                
+if (!commitsRaw) {                                                              
+                                                                                
+  process.stdout.write('No job commits in the last 24 hours.\n');               
+                                                                                
+  process.exit(0);                                                              
+                                                                                
+}                                                                               
+                                                                                
+                                                                                
+                                                                                
+const commits = commitsRaw.split('\n').map(line => {                            
+                                                                                
+  const [hash, ...rest] = line.split(' ');                                      
+                                                                                
+  const messageAndAuthor = rest.join(' ');                                      
+                                                                                
+  const lastSpace = messageAndAuthor.lastIndexOf(' ');                          
+                                                                                
+  return {                                                                      
+                                                                                
+    hash,                                                                       
+                                                                                
+    message: messageAndAuthor.slice(0, lastSpace),                              
+                                                                                
+    author: messageAndAuthor.slice(lastSpace + 1)                               
+                                                                                
+  };                                                                            
+                                                                                
+});                                                                             
+                                                                                
+                                                                                
+                                                                                
+// Build markdown report                                                        
+                                                                                
+let md = '# Recent Auto-Merged Job Commits\n\n';                                
+                                                                                
+md += `Generated on: ${new Date().toISOString()}\n\n`;                          
+                                                                                
+                                                                                
+                                                                                
+for (const c of commits) {                                                      
+                                                                                
+  md += `## ${c.hash} – ${c.message}\n`;                                        
+                                                                                
+  md += `**Author:** ${c.author}\n\n`;                                          
+                                                                                
+  const files = run(`git show --name-only                                       
+${c.hash}`).split('\n').filter(Boolean);                                        
+                                                                                
+  md += '**Files changed:**\n';                                                 
+                                                                                
+  for (const file of files) {                                                   
+                                                                                
+    md += `- \`${file}\`\n`;                                                    
+                                                                                
+  }                                                                             
+                                                                                
+  md += '\n';                                                                   
+                                                                                
+}                                                                               
+                                                                                
+                                                                                
+                                                                                
+const outFile = path.resolve(process.cwd(), 'docs/audit_recent_jobs.md');       
+                                                                                
+fs.mkdirSync(path.dirname(outFile), { recursive: true });                       
+                                                                                
+fs.writeFileSync(outFile, md, 'utf8');                                          
+                                                                                
+                                                                                
+                                                                                
+// 4. One-line summary to stdout                                                
+                                                                                
+process.stdout.write(`Audit complete: ${commits.length} job commit(s) written to
+${outFile}\n');                                                                 
+                                                                                
+
+Tokens: 2.4k sent, 440 received.
+
+scripts/audit_recent_jobs.js
+Applied edit to scripts/audit_recent_jobs.js
+
+# Fix any errors below, if possible.
+
+
+## See relevant line below marked with █.
+
+scripts/audit_recent_jobs.js:
+...⋮...
+ 45│fs.writeFileSync(outFile, md, 'utf8');
+ 46│
+ 47│// 4. One-line summary to stdout
+ 48█process.stdout.write(`Audit complete: ${commits.length} job commit(s) 
+written to ${outFile}\n');
+
+
+litellm.RateLimitError: RateLimitError: GroqException - {"error":{"message":"Rate limit reached for model `moonshotai/kimi-k2-instruct` in organization `org_01k8hvfex4fbctgxtn9t8nya75` service tier `on_demand` on tokens per minute (TPM): Limit 10000, Used 8963, Requested 1270. Please try again in 1.398s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing","type":"tokens","code":"rate_limit_exceeded"}}
+
+The API provider has rate limited you. Try again later or check your quotas.
+Retrying in 0.2 seconds...
+litellm.RateLimitError: RateLimitError: GroqException - {"error":{"message":"Rate limit reached for model `moonshotai/kimi-k2-instruct` in organization `org_01k8hvfex4fbctgxtn9t8nya75` service tier `on_demand` on tokens per minute (TPM): Limit 10000, Used 8915, Requested 1270. Please try again in 1.109999999s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing","type":"tokens","code":"rate_limit_exceeded"}}
+
+The API provider has rate limited you. Try again later or check your quotas.
+Retrying in 0.5 seconds...
+litellm.RateLimitError: RateLimitError: GroqException - {"error":{"message":"Rate limit reached for model `moonshotai/kimi-k2-instruct` in organization `org_01k8hvfex4fbctgxtn9t8nya75` service tier `on_demand` on tokens per minute (TPM): Limit 10000, Used 8826, Requested 1270. Please try again in 576ms. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing","type":"tokens","code":"rate_limit_exceeded"}}
+
+The API provider has rate limited you. Try again later or check your quotas.
+Retrying in 1.0 seconds...
+litellm.RateLimitError: RateLimitError: GroqException - 
+{"error":{"message":"Rate limit reached for model `moonshotai/kimi-k2-instruct` 
+in organization `org_01k8hvfex4fbctgxtn9t8nya75` service tier `on_demand` on 
+tokens per minute (TPM): Limit 10000, Used 9912, Requested 3266. Please try 
+again in 19.068s. Need more tokens? Upgrade to Dev Tier today at 
+https://console.groq.com/settings/billing","type":"tokens","code":"rate_limit_ex
+ceeded"}}
+
+The API provider has rate limited you. Try again later or check your quotas.
+Retrying in 0.2 seconds...
+litellm.RateLimitError: RateLimitError: GroqException - 
+{"error":{"message":"Rate limit reached for model `moonshotai/kimi-k2-instruct` 
+in organization `org_01k8hvfex4fbctgxtn9t8nya75` service tier `on_demand` on 
+tokens per minute (TPM): Limit 10000, Used 9864, Requested 3266. Please try 
+again in 18.78s. Need more tokens? Upgrade to Dev Tier today at 
+https://console.groq.com/settings/billing","type":"tokens","code":"rate_limit_ex
+ceeded"}}
+
+The API provider has rate limited you. Try again later or check your quotas.
+Retrying in 0.5 seconds...
+litellm.RateLimitError: RateLimitError: GroqException - 
+{"error":{"message":"Rate limit reached for model `moonshotai/kimi-k2-instruct` 
+in organization `org_01k8hvfex4fbctgxtn9t8nya75` service tier `on_demand` on 
+tokens per minute (TPM): Limit 10000, Used 9774, Requested 3266. Please try 
+again in 18.24s. Need more tokens? Upgrade to Dev Tier today at 
+https://console.groq.com/settings/billing","type":"tokens","code":"rate_limit_ex
+ceeded"}}
+
+The API provider has rate limited you. Try again later or check your quotas.
+Retrying in 1.0 seconds...
+litellm.RateLimitError: RateLimitError: GroqException - 
+{"error":{"message":"Rate limit reached for model `moonshotai/kimi-k2-instruct` 
+in organization `org_01k8hvfex4fbctgxtn9t8nya75` service tier `on_demand` on 
+tokens per minute (TPM): Limit 10000, Used 9601, Requested 3266. Please try 
+again in 17.202s. Need more tokens? Upgrade to Dev Tier today at 
+https://console.groq.com/settings/billing","type":"tokens","code":"rate_limit_ex
+ceeded"}}
+
+The API provider has rate limited you. Try again later or check your quotas.
+Retrying in 2.0 seconds...
+litellm.RateLimitError: RateLimitError: GroqException - 
+{"error":{"message":"Rate limit reached for model `moonshotai/kimi-k2-instruct` 
+in organization `org_01k8hvfex4fbctgxtn9t8nya75` service tier `on_demand` on 
+tokens per minute (TPM): Limit 10000, Used 9261, Requested 3266. Please try 
+again in 15.161999999s. Need more tokens? Upgrade to Dev Tier today at 
+https://console.groq.com/settings/billing","type":"tokens","code":"rate_limit_ex
+ceeded"}}
+
+The API provider has rate limited you. Try again later or check your quotas.
+Retrying in 4.0 seconds...
+litellm.RateLimitError: RateLimitError: GroqException - 
+{"error":{"message":"Rate limit reached for model `moonshotai/kimi-k2-instruct` 
+in organization `org_01k8hvfex4fbctgxtn9t8nya75` service tier `on_demand` on 
+tokens per minute (TPM): Limit 10000, Used 8588, Requested 3266. Please try 
+again in 11.124s. Need more tokens? Upgrade to Dev Tier today at 
+https://console.groq.com/settings/billing","type":"tokens","code":"rate_limit_ex
+ceeded"}}
+
+The API provider has rate limited you. Try again later or check your quotas.
+Retrying in 8.0 seconds...
+litellm.RateLimitError: RateLimitError: GroqException - 
+{"error":{"message":"Rate limit reached for model `moonshotai/kimi-k2-instruct` 
+in organization `org_01k8hvfex4fbctgxtn9t8nya75` service tier `on_demand` on 
+tokens per minute (TPM): Limit 10000, Used 7229, Requested 3266. Please try 
+again in 2.97s. Need more tokens? Upgrade to Dev Tier today at 
+https://console.groq.com/settings/billing","type":"tokens","code":"rate_limit_ex
+ceeded"}}
+
+The API provider has rate limited you. Try again later or check your quotas.
+Retrying in 16.0 seconds...
+scripts/audit_recent_jobs.js                                                    
+
+                                                                                
+@@ -5,5 +5,6 @@                                                                 
+                                                                                
+                                                                                
+ fs.writeFileSync(outFile, md, 'utf8');                                         
+                                                                                
+ // 4. One-line summary to stdout                                               
+-process.stdout.write(`Audit complete: ${commits.length} job commit(s) written  
+to ${outFile}\n');                                                              
++process.stdout.write(`Audit complete: ${commits.length} job commit(s) written  
+to ${outFile}\n`);                                                              
+                                                                                
+
+Tokens: 3.3k sent, 440 received.
+Applied edit to scripts/audit_recent_jobs.js
+Summarization failed for model groq/moonshotai/kimi-k2-instruct: cannot schedule new futures after shutdown
+litellm.RateLimitError: RateLimitError: GroqException - {"error":{"message":"Rate limit reached for model `moonshotai/kimi-k2-instruct` in organization `org_01k8hvfex4fbctgxtn9t8nya75` service tier `on_demand` on tokens per minute (TPM): Limit 10000, Used 9281, Requested 1827. Please try again in 6.648s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing","type":"tokens","code":"rate_limit_exceeded"}}
+
+The API provider has rate limited you. Try again later or check your quotas.
+Retrying in 0.2 seconds...
+litellm.RateLimitError: RateLimitError: GroqException - {"error":{"message":"Rate limit reached for model `moonshotai/kimi-k2-instruct` in organization `org_01k8hvfex4fbctgxtn9t8nya75` service tier `on_demand` on tokens per minute (TPM): Limit 10000, Used 9233, Requested 1827. Please try again in 6.359999999s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing","type":"tokens","code":"rate_limit_exceeded"}}
+
+The API provider has rate limited you. Try again later or check your quotas.
+Retrying in 0.5 seconds...
+litellm.RateLimitError: RateLimitError: GroqException - {"error":{"message":"Rate limit reached for model `moonshotai/kimi-k2-instruct` in organization `org_01k8hvfex4fbctgxtn9t8nya75` service tier `on_demand` on tokens per minute (TPM): Limit 10000, Used 9143, Requested 1827. Please try again in 5.82s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing","type":"tokens","code":"rate_limit_exceeded"}}
+
+The API provider has rate limited you. Try again later or check your quotas.
+Retrying in 1.0 seconds...
+litellm.RateLimitError: RateLimitError: GroqException - {"error":{"message":"Rate limit reached for model `moonshotai/kimi-k2-instruct` in organization `org_01k8hvfex4fbctgxtn9t8nya75` service tier `on_demand` on tokens per minute (TPM): Limit 10000, Used 8971, Requested 1827. Please try again in 4.787999999s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing","type":"tokens","code":"rate_limit_exceeded"}}
+
+The API provider has rate limited you. Try again later or check your quotas.
+Retrying in 2.0 seconds...
+litellm.RateLimitError: RateLimitError: GroqException - {"error":{"message":"Rate limit reached for model `moonshotai/kimi-k2-instruct` in organization `org_01k8hvfex4fbctgxtn9t8nya75` service tier `on_demand` on tokens per minute (TPM): Limit 10000, Used 8632, Requested 1827. Please try again in 2.754s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing","type":"tokens","code":"rate_limit_exceeded"}}
+
+The API provider has rate limited you. Try again later or check your quotas.
+Retrying in 4.0 seconds...
+Summarization failed for model groq/moonshotai/kimi-k2-instruct: cannot schedule new futures after shutdown
+summarizer unexpectedly failed for all models
