@@ -61,8 +61,20 @@ sed -i "s/{{datetime}}/$(date -u +"%Y-%m-%dT%H:%M:%SZ")/g" "$CLAUDE_MD"
 
 PROMPT="$(cat /job/logs/${JOB_ID}/job.md)"
 
-# Build aider model string: groq/<model>
-AIDER_MODEL="groq/${LLM_MODEL:-moonshotai/kimi-k2-instruct}"
+# Build aider model string based on provider
+# google -> gemini/<model> (uses GEMINI_API_KEY)
+# groq/custom/default -> groq/<model> (uses GROQ_API_KEY)
+LLM_PROVIDER="${LLM_PROVIDER:-groq}"
+MODEL="${LLM_MODEL:-moonshotai/kimi-k2-instruct}"
+
+if [ "$LLM_PROVIDER" = "google" ]; then
+    AIDER_MODEL="gemini/${MODEL}"
+    # aider uses GEMINI_API_KEY for Google AI Studio
+    export GEMINI_API_KEY="${GEMINI_API_KEY:-$GOOGLE_API_KEY}"
+else
+    AIDER_MODEL="groq/${MODEL}"
+fi
+
 echo "Using model: ${AIDER_MODEL}"
 
 # Run aider — capture exit code instead of letting set -e kill the script
