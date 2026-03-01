@@ -12,18 +12,3 @@ export default function handler(request, response) {
   // Return a simple JSON payload indicating the service is alive.
   response.status(200).json({ status: 'ok' });
 }
-/**
- * Heartbeat endpoint for health checks.
- * This endpoint must remain lightweight and DB-free for monitoring purposes.
- * It should not import any modules that trigger database initialization or heavy operations.
- */
-export default function handler(request, response) {
-  // Only allow GET requests for the heartbeat endpoint.
-  if (request.method !== 'GET') {
-    response.status(405).json({ error: 'Method not allowed' });
-    return;
-  }
-
-  // Return a simple JSON payload indicating the service is alive.
-  response.status(200).json({ status: 'ok' });
-}
