@@ -1,6 +1,5 @@
-// This API route provides a lightweight heartbeat endpoint for monitoring purposes.
-// It must remain free of heavy operations like database access or complex logic
-// to ensure it responds quickly and without side effects.
+// This is a lightweight heartbeat endpoint for monitoring purposes.
+// It must not import or call any code that triggers DB initialization or heavy work.
 export default function handler(request, response) {
   // Only allow GET requests; other methods are not supported for a heartbeat.
   if (request.method !== 'GET') {
