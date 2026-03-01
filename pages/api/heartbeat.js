@@ -1,6 +1,5 @@
-// This API route provides a lightweight "heartbeat" or health check endpoint.
-// It should remain entirely free of database operations or heavy computations
-// to serve its purpose for frequent monitoring by orchestrators.
+// This endpoint is for health checks and must remain lightweight and DB-free.
+// It should not import or call any code that triggers DB initialization.
 export default function handler(request, response) {
   response.status(200).json({ status: 'ok' });
 }
