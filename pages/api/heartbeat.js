@@ -1,6 +1,6 @@
-// This API route is a lightweight heartbeat endpoint used for monitoring the service's liveness.
-// It must remain free of any heavy operations, especially database interactions, to ensure quick
-// and reliable responses for frequent health checks from orchestrators like Docker, k8s, etc.
+// This endpoint is a lightweight "health check" for orchestrators (e.g., Docker, k8s, Render).
+// It must remain lightweight and DB-free for monitoring purposes.
+// Do not import or call any code that triggers DB initialization.
 export default function handler(request, response) {
   // Only allow GET requests; other methods are not supported for a heartbeat.
   if (request.method !== 'GET') {
