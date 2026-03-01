@@ -1,10 +1,6 @@
-// This API route provides a lightweight "heartbeat" or "health check" endpoint.
-// It is designed to be called frequently by orchestrators (e.g., Docker, k8s, Render)
-// to confirm the service is up without touching the database or performing heavy work.
-//
-// It MUST NOT import or call any code that triggers database initialization
-// (e.g., from lib/db/, lib/tools/, etc.) to maintain its lightweight nature.
-
+// This API route is a lightweight heartbeat endpoint used for monitoring the service's liveness.
+// It must remain free of any heavy operations, especially database interactions, to ensure quick
+// and reliable responses for frequent health checks from orchestrators like Docker, k8s, etc.
 export default function handler(request, response) {
   // Only allow GET requests; other methods are not supported for a heartbeat.
   if (request.method !== 'GET') {
