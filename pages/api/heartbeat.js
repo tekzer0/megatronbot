@@ -1,10 +1,6 @@
-// This API route provides a lightweight "heartbeat" or "health check" endpoint.
-// It is designed to be called frequently by orchestrators (e.g., Docker, Kubernetes)
-// to confirm service availability without touching the database or performing
-// any heavy computations.
-//
-// DO NOT import or call any code that triggers database initialization (e.g.,
-// from lib/db/, lib/tools/, etc.) or performs other resource-intensive operations.
+// This is a lightweight "health check" endpoint for orchestrators (e.g., Docker, k8s, Render).
+// It must remain lightweight and not import or call any code that triggers database initialization
+// or performs heavy work, to ensure it's safe to call frequently for monitoring purposes.
 export default function handler(request, response) {
   response.status(200).json({ status: 'ok' });
 }
