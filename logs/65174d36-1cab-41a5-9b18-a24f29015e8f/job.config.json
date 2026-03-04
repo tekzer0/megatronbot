@@ -1,0 +1,4 @@
+{
+  "title": "Read the file `config/EVENT_HANDLER.md`. Analyze its contents to understand how",
+  "job": "Read the file `config/EVENT_HANDLER.md`. Analyze its contents to understand how the event handler processes and sends messages. Specifically, identify any mechanisms or configuration points that could be used to intercept or modify outgoing chat responses to integrate the `speak` skill and send audio to Telegram.\n\n**Crucially, summarize only the relevant findings directly to stdout, ensuring the summary is clear, concise, and avoids numerical details or excessive technical jargon.** Focus on explaining the process in plain language to help determine how to enable voice responses in this chat via Telegram."
+}
