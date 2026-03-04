@@ -99,7 +99,7 @@ def run_speak_skill_test():
         return
 
     client = MegatronClient()
-    test_phrase = 'Hello from your assistant. This is a voice test.'
+    test_phrase = 'This is an end-to-end voice test to Telegram. If you hear this, the integration is working!'
     print(f"\n2. Attempting Voice Message: '{test_phrase}'")
     audio_bytes = None
 
