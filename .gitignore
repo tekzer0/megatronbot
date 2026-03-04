@@ -42,3 +42,9 @@ temp/
 
 # Data (SQLite memory, etc.)
 data/
+
+# Voice assistant — personal system prompt with HA entities and local network info
+voice/system_prompt.md
+
+# Generated service file (created by voice/install-service.sh)
+voice/megatron-voice.service

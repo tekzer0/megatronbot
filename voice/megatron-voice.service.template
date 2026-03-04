@@ -5,11 +5,11 @@ Wants=network.target
 
 [Service]
 Type=simple
-User=tekzer0
-Group=tekzer0
-WorkingDirectory=/home/tekzer0/mybot/voice
-ExecStart=/usr/bin/python3 -u /home/tekzer0/mybot/voice/voice.py
-Restart=on-failure
+User=VOICE_USER
+Group=VOICE_USER
+WorkingDirectory=VOICE_DIR
+ExecStart=/usr/bin/python3 -u VOICE_DIR/voice.py
+Restart=always
 RestartSec=10
 StandardOutput=journal
 StandardError=journal

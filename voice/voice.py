@@ -1,17 +1,16 @@
 #!/usr/bin/env python3
 """
-Megatron Voice Assistant — Oracle1 (Pi 5)
-Based on oracle_client.py — ReSpeaker XVF3800 4-Mic (card 0)
-
-Wake word detection: faster-whisper on short chunks (no Porcupine, no .ppn files, no renewals)
+Megatron Voice Assistant
+Wake word detection: faster-whisper on short chunks (no Porcupine, no .ppn files)
 STT: faster-whisper base (on-device)
-LLM: Groq Kimi-K2
+LLM: Groq (configurable model)
 TTS: ElevenLabs → mpg123
-HA: direct REST API calls (same approach as oracle_client_ollama.py)
+
+Configuration: read from parent .env (project root) then voice/.env (local override).
+Personalized system prompt: voice/system_prompt.md (gitignored, user-created from example).
 """
 
 import os
-import io
 import re
 import json
 import wave
@@ -27,6 +26,11 @@ from faster_whisper import WhisperModel
 import alsaaudio
 
 os.environ['ORT_LOGGING_LEVEL'] = '3'
+
+# --- Paths ---
+
+_VOICE_DIR   = os.path.dirname(os.path.abspath(__file__))
+_PROJECT_DIR = os.path.dirname(_VOICE_DIR)
 
 
 # --- Config ---
@@ -44,45 +48,58 @@ def load_dotenv(path):
     except FileNotFoundError:
         pass
 
-load_dotenv(os.path.expanduser('~/mybot/.env'))
-load_dotenv(os.path.join(os.path.dirname(__file__), '.env'))
+# Load project root .env first, then voice-local .env (takes precedence)
+load_dotenv(os.path.join(_PROJECT_DIR, '.env'))
+load_dotenv(os.path.join(_VOICE_DIR, '.env'))
 
 GROQ_API_KEY        = os.environ.get('GROQ_API_KEY', '')
 ELEVENLABS_API_KEY  = os.environ.get('ELEVENLABS_API_KEY', '')
 ELEVENLABS_VOICE_ID = os.environ.get('ELEVENLABS_VOICE_ID', 'YOq2y2Up4RgXP2HyXjE5')
 ELEVENLABS_MODEL    = 'eleven_flash_v2_5'
-ELEVENLABS_SPEED    = 1.15
-KIMI_MODEL          = 'moonshotai/kimi-k2-instruct'
-HA_URL              = os.environ.get('HA_URL', 'http://192.168.1.210:8123')
+ELEVENLABS_SPEED    = float(os.environ.get('ELEVENLABS_SPEED', '1.15'))
+GROQ_MODEL          = os.environ.get('VOICE_LLM_MODEL', 'moonshotai/kimi-k2-instruct')
+
+HA_URL              = os.environ.get('HA_URL', 'http://homeassistant.local:8123')
 HA_TOKEN            = os.environ.get('HA_ACCESS_TOKEN', '')
 
-WAKE_WORD           = 'megatron'
-# Whisper tiny sometimes transcribes it differently — catch all variants
-WAKE_ALIASES        = ['megatron', 'mega tron', 'mega-tron', 'megaton', 'meg a tron']
-WHISPER_WAKE_SIZE   = 'tiny'    # fast, just needs to catch one word
-WHISPER_STT_SIZE    = 'base'    # better accuracy for actual commands
+WAKE_WORD           = os.environ.get('VOICE_WAKE_WORD', 'megatron')
+# Whisper tiny sometimes transcribes the wake word differently — catch variants
+WAKE_ALIASES_RAW    = os.environ.get('VOICE_WAKE_ALIASES', 'megatron,mega tron,mega-tron,megaton,meg a tron')
+WAKE_ALIASES        = [a.strip() for a in WAKE_ALIASES_RAW.split(',')]
 
-# ReSpeaker XVF3800 is now on card 0 (was card 2 previously)
-RESPEAKER_CARD      = 0
-RESPEAKER_DEVICE    = 'plughw:0,0'
-SPEAKER_DEVICE      = 'plughw:0,0'
+WHISPER_WAKE_SIZE   = os.environ.get('VOICE_WHISPER_WAKE', 'tiny')   # fast, just catches one word
+WHISPER_STT_SIZE    = os.environ.get('VOICE_WHISPER_STT', 'base')    # better accuracy for commands
 
-CHANNELS            = 2         # ReSpeaker outputs beamformed 2-channel
+# Audio device config — set these in .env to match your hardware
+# Run `arecord -l` to list capture devices, `aplay -l` to list playback devices
+RESPEAKER_CARD      = int(os.environ.get('VOICE_MIC_CARD', '0'))
+RESPEAKER_DEVICE    = os.environ.get('VOICE_MIC_DEVICE', 'plughw:0,0')
+SPEAKER_DEVICE      = os.environ.get('VOICE_SPEAKER_DEVICE', 'plughw:0,0')
+
+CHANNELS            = int(os.environ.get('VOICE_MIC_CHANNELS', '2'))
 SAMPLE_RATE         = 16000
 CHUNK_SIZE          = 512
 
 # VAD — looser values to avoid cutting off speech mid-sentence
-SILENCE_THRESHOLD   = 300
-SILENCE_DURATION    = 2.0
-MAX_RECORD_SECONDS  = 12
+SILENCE_THRESHOLD   = int(os.environ.get('VOICE_SILENCE_THRESHOLD', '300'))
+SILENCE_DURATION    = float(os.environ.get('VOICE_SILENCE_DURATION', '2.0'))
+MAX_RECORD_SECONDS  = int(os.environ.get('VOICE_MAX_RECORD_SECONDS', '12'))
 
-# Wake word chunk duration (seconds of audio per Whisper check)
+# Wake word chunk duration
 WAKE_CHUNK_SECONDS  = 2
 
-SYSTEM_PROMPT = """You are Megatron, a voice assistant running locally on Oracle1 (Raspberry Pi 5).
+
+# --- System Prompt ---
+
+def load_system_prompt():
+    """
+    Load system prompt.
+    Base prompt is generic. Personalized content (HA entities, local network info)
+    is appended from voice/system_prompt.md if it exists.
+    Create yours from voice/system_prompt.example.md.
+    """
+    base = f"""You are {WAKE_WORD.capitalize()}, a voice assistant.
 Keep responses brief and natural — spoken aloud, 1-2 sentences max unless more is needed.
-You know about: popebot on port 3000, cloudflared tunnel to megatron.chemical-valley.com,
-Home Assistant at 192.168.1.210, Ollama at 192.168.1.190, OLED display, local network 192.168.1.x.
 
 CRITICAL RULES:
 - NEVER speak entity IDs, service names, JSON, or any technical details aloud.
@@ -90,26 +107,22 @@ CRITICAL RULES:
 - Your spoken reply must sound 100% natural — like a human assistant confirming an action.
 - Good: "Done, hallway lights are off." Bad: "Calling service light.turn_off on entity light.hallway."
 
-KNOWN HOME ASSISTANT ENTITIES (use exact entity_id in commands, NEVER speak them):
-Lights:
-  light.hallway (Hallway), light.hall_1 (Hall 1), light.hall_2 (Hall 2)
-  light.bedroom (Bedroom), light.bed_lamp_2 (Bed lamp 2)
-  light.table (table), light.ben_wah (ben wah)
-  light.deck_floodlight_floodlight (Deck Floodlight)
-  light.bedroom_switch (big)
-Switches:
-  switch.sonoff_1000b50b30 (Bathroom light)
-  switch.sonoff_100028cd72 (k light), switch.sonoff_1000481c66_1/2 (klight)
-  switch.sonoff_1000216191 (overhead)
-  switch.deck_floodlight_power (Deck Floodlight Power)
-  switch.pihole (Pi-hole)
+When controlling Home Assistant devices, output the command tag FIRST (silent — never read aloud),
+then your natural spoken reply:
+<HA_COMMAND>{{"service": "light.turn_off", "entity_id": "light.example"}}</HA_COMMAND>
+Done, the light is off.
 
-When controlling devices, output the command tag FIRST (silent — never read aloud), then your natural spoken reply:
-<HA_COMMAND>{"service": "light.turn_off", "entity_id": "light.hallway"}</HA_COMMAND>
-Done, hallway lights are off.
+Multiple commands allowed. Spoken reply goes AFTER all command tags, always natural language only."""
 
-Multiple commands allowed. Spoken reply goes AFTER all command tags, always natural language only.
-"""
+    prompt_file = os.path.join(_VOICE_DIR, 'system_prompt.md')
+    if os.path.exists(prompt_file):
+        with open(prompt_file) as f:
+            extra = f.read().strip()
+        if extra:
+            base += '\n\n' + extra
+    return base
+
+SYSTEM_PROMPT = load_system_prompt()
 
 
 class MegatronClient:
@@ -120,10 +133,9 @@ class MegatronClient:
         self.audio_buffer   = []
         self.history        = []
 
-    def configure_respeaker_gain(self):
-        """Optimize ReSpeaker microphone gain for better voice pickup"""
+    def configure_mic_gain(self):
+        """Try to set microphone gain via amixer (silently skips if not supported)"""
         try:
-            print('Configuring ReSpeaker microphone gain...')
             subprocess.run(
                 ['amixer', '-c', str(RESPEAKER_CARD), 'set', 'Capture', '85%'],
                 capture_output=True
@@ -132,25 +144,23 @@ class MegatronClient:
                 ['amixer', '-c', str(RESPEAKER_CARD), 'set', 'ADC PCM', '85%'],
                 capture_output=True
             )
-            print('✓ Microphone gain optimized')
+            print('✓ Microphone gain configured')
         except Exception as e:
-            print(f'⚠  Could not auto-configure gain: {e}')
+            print(f'⚠  Could not configure gain: {e}')
 
     def initialize(self):
         print('=' * 60)
-        print('Megatron Voice Assistant — Oracle1')
+        print(f'{WAKE_WORD.capitalize()} Voice Assistant')
         print('=' * 60)
 
-        self.configure_respeaker_gain()
+        self.configure_mic_gain()
 
-        # Load Whisper models
         print(f'Loading Whisper {WHISPER_WAKE_SIZE} (wake word)...')
         self.whisper_wake = WhisperModel(WHISPER_WAKE_SIZE, device='cpu', compute_type='float32')
 
         print(f'Loading Whisper {WHISPER_STT_SIZE} (transcription)...')
         self.whisper_stt = WhisperModel(WHISPER_STT_SIZE, device='cpu', compute_type='float32')
 
-        # Initialize audio input
         self.audio_input = alsaaudio.PCM(
             alsaaudio.PCM_CAPTURE,
             alsaaudio.PCM_NORMAL,
@@ -161,14 +171,19 @@ class MegatronClient:
             device=RESPEAKER_DEVICE
         )
 
-        print(f'✓ Wake word: "{WAKE_WORD}" (Whisper-based, no .ppn files)')
-        print(f'✓ ReSpeaker XVF3800 on card {RESPEAKER_CARD}')
-        print(f'✓ LLM: {KIMI_MODEL}')
+        print(f'✓ Wake word: "{WAKE_WORD}"')
+        print(f'✓ Mic device: {RESPEAKER_DEVICE} (card {RESPEAKER_CARD})')
+        print(f'✓ Speaker: {SPEAKER_DEVICE}')
+        print(f'✓ LLM: {GROQ_MODEL}')
         print(f'✓ TTS: ElevenLabs {ELEVENLABS_VOICE_ID}')
+        ha_status = '✓ Home Assistant: enabled' if HA_TOKEN else '⚠  Home Assistant: no HA_ACCESS_TOKEN set'
+        print(ha_status)
         print('=' * 60)
 
-    def audio_chunks_to_float(self, chunks, channels=CHANNELS):
+    def audio_chunks_to_float(self, chunks, channels=None):
         """Convert raw audio chunks to float32 mono array for Whisper"""
+        if channels is None:
+            channels = CHANNELS
         raw = b''.join(chunks)
         audio_np = np.frombuffer(raw, dtype=np.int16)
         if channels == 2:
@@ -194,7 +209,7 @@ class MegatronClient:
         return ' '.join(s.text for s in segments).strip()
 
     def beep(self):
-        """Play a short 0.2s tone via aplay so user knows to speak"""
+        """Play a short 0.2s tone so user knows to speak"""
         import struct, math, tempfile
         rate = 16000
         freq = 880
@@ -215,15 +230,14 @@ class MegatronClient:
             os.unlink(tmp)
 
     def listen_for_wake_word(self):
-        """Continuously buffer audio and check for wake word using Whisper tiny.
-        If the wake chunk contains content after 'megatron', use it directly.
-        Otherwise play a beep and record the next utterance.
+        """Continuously buffer audio and check for wake word using Whisper.
+        Rolling 3s buffer, checked every 2s (overlap catches words at chunk edges).
+        If command spoken in same breath, use directly. Otherwise beep and record.
         """
         print(f'\nListening for "{WAKE_WORD}"...\n')
-        # Rolling buffer: keep 3s of audio, check every 2s (overlap catches words at chunk edges)
         wake_buffer = []
-        chunk_step   = int(WAKE_CHUNK_SECONDS * SAMPLE_RATE / CHUNK_SIZE)   # chunks per 2s
-        chunk_window = int(3 * SAMPLE_RATE / CHUNK_SIZE)                    # keep 3s total
+        chunk_step   = int(WAKE_CHUNK_SECONDS * SAMPLE_RATE / CHUNK_SIZE)
+        chunk_window = int(3 * SAMPLE_RATE / CHUNK_SIZE)
         chunks_since_check = 0
         io_errors = 0
 
@@ -245,7 +259,7 @@ class MegatronClient:
 
                 wake_buffer.append(data)
                 if len(wake_buffer) > chunk_window:
-                    wake_buffer = wake_buffer[-chunk_window:]   # keep only last 3s
+                    wake_buffer = wake_buffer[-chunk_window:]
 
                 chunks_since_check += 1
                 if chunks_since_check < chunk_step:
@@ -253,16 +267,14 @@ class MegatronClient:
                 chunks_since_check = 0
 
                 audio_float = self.audio_chunks_to_float(wake_buffer)
-
                 text = self.transcribe_with_model(
                     self.whisper_wake, audio_float,
-                    prompt='Megatron'
+                    prompt=WAKE_WORD.capitalize()
                 )
 
-                # Filter out common Whisper hallucinations on silence/background noise
                 tclean = text.strip().lower().rstrip('.')
                 HALLUCINATIONS = {
-                    '', 'megatron', 'thank you', 'thanks', 'music playing',
+                    '', WAKE_WORD, 'thank you', 'thanks', 'music playing',
                     'music', '...', '.. ..', 'you', 'the', 'bye', 'bye bye',
                     'please subscribe', 'subscribe', 'subtitles by',
                 }
@@ -273,9 +285,8 @@ class MegatronClient:
                 tl = text.lower()
                 if not is_hallucination and any(alias in tl for alias in WAKE_ALIASES):
                     print(f'\n🎤 "{WAKE_WORD}" detected! [{datetime.now().strftime("%H:%M:%S")}]')
-                    wake_buffer = []   # reset buffer after detection
+                    wake_buffer = []
 
-                    # Check if command was spoken in the same breath as wake word
                     after_wake = tl
                     for alias in WAKE_ALIASES:
                         if alias in tl:
@@ -287,7 +298,7 @@ class MegatronClient:
                     else:
                         self.record_and_respond()
 
-                        print(f'Listening for "{WAKE_WORD}"...\n')
+                    print(f'Listening for "{WAKE_WORD}"...\n')
 
         except KeyboardInterrupt:
             print('\nShutting down.')
@@ -295,7 +306,6 @@ class MegatronClient:
             self.cleanup()
 
     def calculate_audio_energy(self, audio_data):
-        """Calculate RMS energy of an audio chunk for VAD"""
         audio_array = np.frombuffer(audio_data, dtype=np.int16)
         return np.sqrt(np.mean(np.abs(audio_array.astype(np.float32)) ** 2))
 
@@ -324,7 +334,6 @@ class MegatronClient:
             else:
                 silence_chunks = 0
 
-        # Transcribe
         print('🔄 Transcribing...')
         t0 = datetime.now()
         audio_float   = self.audio_chunks_to_float(self.audio_buffer)
@@ -344,24 +353,21 @@ class MegatronClient:
         """Send transcription to LLM, execute HA commands, speak response.
         If response ends with a question, auto-listen for reply without wake word.
         """
-        # LLM
         print('🤖 Processing...')
         t0 = datetime.now()
         response_text = self.chat(transcription)
         print(f'✓ ({(datetime.now()-t0).total_seconds():.1f}s)')
 
-        # Execute any HA commands
         ha_commands = self.extract_ha_commands(response_text)
         for cmd in ha_commands:
             self.execute_ha_command(cmd)
 
         spoken = self.clean_response(response_text)
         if spoken:
-            print(f'Megatron: {spoken}')
+            print(f'{WAKE_WORD.capitalize()}: {spoken}')
             audio_bytes = self.tts(spoken)
             self.play_mp3(audio_bytes)
 
-            # If response was a question, auto-listen for reply (no wake word needed)
             if spoken.rstrip().endswith('?'):
                 print('  (question asked — listening for reply...)')
                 self.record_and_respond()
@@ -376,7 +382,7 @@ class MegatronClient:
         resp = requests.post(
             'https://api.groq.com/openai/v1/chat/completions',
             headers={'Authorization': f'Bearer {GROQ_API_KEY}', 'Content-Type': 'application/json'},
-            json={'model': KIMI_MODEL, 'messages': messages, 'max_tokens': 400},
+            json={'model': GROQ_MODEL, 'messages': messages, 'max_tokens': 400},
             timeout=30,
         )
         resp.raise_for_status()
@@ -396,11 +402,13 @@ class MegatronClient:
         return commands
 
     def execute_ha_command(self, command):
+        if not HA_TOKEN:
+            print('⚠  HA command skipped: HA_ACCESS_TOKEN not set')
+            return
         try:
             service = command.get('service', '')
             if '/' not in service and '.' not in service:
                 return
-            # Support both "light/turn_on" and "light.turn_on" formats
             sep = '/' if '/' in service else '.'
             domain, svc = service.split(sep, 1)
             url = f'{HA_URL}/api/services/{domain}/{svc}'
@@ -457,14 +465,13 @@ class MegatronClient:
 
 
 def main():
-    # Handle SIGTERM from systemd gracefully (raises KeyboardInterrupt in main thread)
     signal.signal(signal.SIGTERM, lambda sig, frame: (_ for _ in ()).throw(KeyboardInterrupt()))
 
     if not GROQ_API_KEY:
-        print('ERROR: GROQ_API_KEY not set in ~/mybot/.env')
+        print('ERROR: GROQ_API_KEY not set in .env')
         return
     if not ELEVENLABS_API_KEY:
-        print('ERROR: ELEVENLABS_API_KEY not set in ~/mybot/.env')
+        print('ERROR: ELEVENLABS_API_KEY not set in .env')
         return
 
     client = MegatronClient()
