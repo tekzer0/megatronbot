@@ -48,3 +48,4 @@ voice/system_prompt.md
 
 # Generated service file (created by voice/install-service.sh)
 voice/megatron-voice.service
+.aider*
