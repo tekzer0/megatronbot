@@ -1,0 +1,4 @@
+{
+  "title": "Read the content of the `config/EVENT_HANDLER.md` file. This file describes",
+  "job": "Read the content of the `config/EVENT_HANDLER.md` file. This file describes the event handler's system prompt and operational details. Print the entire content of this file to stdout. This information is needed to determine how to modify the system to send my chat responses as audio to Telegram using the `speak` skill."
+}
