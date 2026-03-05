@@ -1,0 +1,4 @@
+{
+  "title": "Read the content of the `config/EVENT_HANDLER.md` file. Print the **entire",
+  "job": "Read the content of the `config/EVENT_HANDLER.md` file. Print the **entire raw content** of this file directly to stdout. This is a crucial step to obtain the configuration details needed to set up audio responses for the chat via Telegram, and it's a direct attempt to get the file's text after previous job failures."
+}
