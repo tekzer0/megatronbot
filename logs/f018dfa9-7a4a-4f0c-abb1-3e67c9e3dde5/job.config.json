@@ -1,0 +1,4 @@
+{
+  "title": "Attempt to read the raw content of the GitHub Actions",
+  "job": "Attempt to read the raw content of the GitHub Actions workflow file located at `.github/workflows/notify-pr-complete.yml`. Print the entire raw content of this file directly to stdout. This information is essential to understand how job completion notifications are handled and to identify a potential point for integrating the `speak` skill for audio responses to Telegram."
+}
