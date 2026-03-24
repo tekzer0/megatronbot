@@ -1,5 +1,36 @@
 # My Agent
 
+---
+
+## ⚠ Claude: Read This First
+
+**Working directory:** `/home/tekzer0/mybot` on the Pi (local filesystem, not a container).
+
+**Local vs Remote — always be explicit:**
+- **Local** = `/home/tekzer0/mybot` on Pi. This is where you edit files, restart services, and test things. PM2 serves this directly.
+- **Remote** = `github.com/tekzer0/megatronbot`. Code is pushed here for backup/deployment. `.env` and `voice/.env` are gitignored and only exist locally.
+- **IMPORTANT:** The remote `main` branch has strict branch protection (requires signed commits + PRs). Direct push will fail. When pushing, note this and handle accordingly.
+- **After every session that changes local files, sync to remote.** Push to a branch and open a PR if direct push to main is blocked.
+- **Do not assume local and remote are in sync.** Always check `git status` and `git log --oneline -3` before making assumptions about state.
+
+**Key services (always check before/after changes):**
+- `pm2 status` — see if thepopebot (port 3000) is running
+- `pm2 restart thepopebot` — restart after code/env changes
+- `sudo systemctl status megatron-voice.service` — voice assistant
+
+**Custom overrides (not managed by thepopebot package upgrades):**
+- `app/stream/chat/route.js` — wraps thepopebot with ChromaDB memory injection
+- `app/api/[...thepopebot]/route.js` — wraps thepopebot with Telegram memory injection
+- `lib/memory.js` — ChromaDB v2 + nomic-embed-text memory module
+- `voice/voice.py` — ChromaDB memory retrieval/storage added to `chat()` method
+
+**Infrastructure:**
+- Ollama LLM + embeddings: `http://192.168.1.241:11434` — models: `llama3.1:8b`, `nomic-embed-text`
+- ChromaDB: `http://192.168.1.230:8000` — collection: `megatron_memory`
+- Home Assistant: `http://192.168.1.210:8123`
+
+---
+
 ## Overview
 
 This is an autonomous AI agent powered by [thepopebot](https://github.com/stephengpope/thepopebot). It uses a **two-layer architecture**:
