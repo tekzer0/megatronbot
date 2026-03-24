@@ -1,7 +1,5 @@
 import { getPageAuthState } from 'thepopebot/auth';
-import { AsciiLogo } from '../components/ascii-logo';
-import { SetupForm } from '../components/setup-form';
-import { LoginForm } from '../components/login-form';
+import { AsciiLogo, SetupForm, LoginForm } from 'thepopebot/auth/components';
 
 export default async function LoginPage() {
   const { needsSetup } = await getPageAuthState();

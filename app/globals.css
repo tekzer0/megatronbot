@@ -70,20 +70,45 @@
   border-radius: 3px;
 }
 
-/* Code block horizontal scroll (overrides streamdown's overflow-hidden) */
-[data-streamdown="code-block"] {
-  overflow-x: auto;
+/* Code block horizontal scroll — target the pre (code-block-body), not the
+   outer wrapper which needs overflow-hidden for border-radius clipping */
+[data-streamdown="code-block-body"] {
+  overflow-x: auto !important;
 }
 
-[data-streamdown="code-block"]::-webkit-scrollbar {
+[data-streamdown="code-block-body"]::-webkit-scrollbar {
   height: 6px;
 }
 
-[data-streamdown="code-block"]::-webkit-scrollbar-track {
+[data-streamdown="code-block-body"]::-webkit-scrollbar-track {
   background: transparent;
 }
 
-[data-streamdown="code-block"]::-webkit-scrollbar-thumb {
+[data-streamdown="code-block-body"]::-webkit-scrollbar-thumb {
   background-color: var(--border);
   border-radius: 3px;
+}
+
+/* Safe-area insets for notched devices */
+:root {
+  --safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-left: env(safe-area-inset-left, 0px);
+  --safe-area-right: env(safe-area-inset-right, 0px);
+}
+
+/* Remove tap highlight on mobile */
+button, a, [role="button"] {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Prevent button text from wrapping */
+button, [role="button"] {
+  white-space: nowrap;
+}
+
+/* Prevent long text from causing horizontal overflow on mobile */
+body {
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
