@@ -62,10 +62,10 @@ jobs:
             MERGE_RESULT="not_merged"
           fi
 
-          # 1. Read job.md (on disk after checkout)
+          # 1. Read job description from job.config.json (on disk after checkout)
           JOB_CONTENT=""
-          if [ -f "logs/${JOB_ID}/job.md" ]; then
-            JOB_CONTENT=$(cat "logs/${JOB_ID}/job.md")
+          if [ -f "logs/${JOB_ID}/job.config.json" ]; then
+            JOB_CONTENT=$(jq -r '.job // empty' "logs/${JOB_ID}/job.config.json")
           fi
 
           # 2. Get last commit message via gh CLI

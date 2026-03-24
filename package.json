@@ -8,7 +8,7 @@
     "setup": "thepopebot setup",
     "setup-telegram": "thepopebot setup-telegram",
     "reset-auth": "thepopebot reset-auth",
-    "postinstall": "cp patches/openai.js node_modules/thepopebot/lib/tools/openai.js && cp patches/instrumentation.js node_modules/thepopebot/config/instrumentation.js && cp patches/use-voice-input.js node_modules/thepopebot/lib/voice/use-voice-input.js"
+    "postinstall": "cp patches/openai.js node_modules/thepopebot/lib/tools/openai.js && cp patches/instrumentation.js node_modules/thepopebot/config/instrumentation.js && cp patches/use-voice-input.js node_modules/thepopebot/lib/voice/use-voice-input.js && cp patches/telegram.js node_modules/thepopebot/lib/channels/telegram.js"
   },
   "dependencies": {
     "@tailwindcss/postcss": "^4.0.0",
@@ -18,6 +18,6 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "tailwindcss": "^4.0.0",
-    "thepopebot": "^1.2.73-beta.21"
+    "thepopebot": "^1.2.73"
   }
 }
